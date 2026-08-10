@@ -15,6 +15,22 @@ function Require-Command($Name, $InstallHint) {
   }
 }
 
+function Invoke-Checked($FilePath, [string[]]$Arguments, $FailureMessage) {
+  & $FilePath @Arguments
+  if ($LASTEXITCODE -ne 0) {
+    throw $FailureMessage
+  }
+}
+
+function Require-PythonVersion() {
+  $versionCheck = "import sys; raise SystemExit(0 if sys.version_info[:2] in ((3, 10), (3, 11)) else 1)"
+  & python -c $versionCheck
+  if ($LASTEXITCODE -ne 0) {
+    $actual = (& python --version 2>&1)
+    throw "Unsupported Python version: $actual. Install Python 3.10 or 3.11 and make it the default 'python' before running setup."
+  }
+}
+
 function Get-Sha256($Text) {
   $sha = [System.Security.Cryptography.SHA256]::Create()
   $bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
@@ -35,6 +51,7 @@ if (-not $SkipNode) {
 if (-not $SkipPython) {
   Require-Command "python" "Install Python 3.10 or 3.11: https://python.org/"
   Write-Host "[setup] Python: $(python --version)"
+  Require-PythonVersion
 }
 
 foreach ($dir in @("media", "media\.thumbs", "media\.face-thumbs")) {
@@ -70,10 +87,10 @@ if ($envText -match "PASS_HASH=(replace_with_sha256_password_hash|your_sha256_ha
 if (-not $SkipNode) {
   if (Test-Path -LiteralPath (Join-Path $Root "package-lock.json")) {
     Write-Host "[setup] Installing Node dependencies with npm ci"
-    npm ci
+    Invoke-Checked "npm" @("ci") "npm ci failed."
   } else {
     Write-Host "[setup] Installing Node dependencies with npm install"
-    npm install
+    Invoke-Checked "npm" @("install") "npm install failed."
   }
 }
 
@@ -84,8 +101,8 @@ if (-not $SkipPython) {
   }
   $VenvPython = Join-Path $VenvDir "Scripts\python.exe"
   Write-Host "[setup] Installing Python dependencies"
-  & $VenvPython -m pip install --upgrade pip
-  & $VenvPython -m pip install -r (Join-Path $FaceDir "requirements.txt")
+  Invoke-Checked $VenvPython @("-m", "pip", "install", "--upgrade", "pip") "pip upgrade failed."
+  Invoke-Checked $VenvPython @("-m", "pip", "install", "-r", (Join-Path $FaceDir "requirements.txt")) "Python dependency installation failed."
 }
 
 if (Get-Command ffmpeg -ErrorAction SilentlyContinue) {

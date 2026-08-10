@@ -20,6 +20,12 @@ if errorlevel 1 (
 )
 for /f "tokens=*" %%v in ('python --version 2^>^&1') do set PYVER=%%v
 echo [AI] Using %PYVER%
+python -c "import sys; raise SystemExit(0 if sys.version_info[:2] in ((3, 10), (3, 11)) else 1)" >nul 2>nul
+if errorlevel 1 (
+    echo [ERROR] Unsupported Python version. Install Python 3.10 or 3.11 and make it the default python.
+    pause
+    exit /b 1
+)
 
 :: ── Create virtualenv if needed ──────────────────────────────
 if not exist "%SCRIPT_DIR%venv\Scripts\activate.bat" (

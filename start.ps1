@@ -70,6 +70,9 @@ try {
 
   Write-Host "[start] Starting Node service"
   npm start
+  if ($LASTEXITCODE -ne 0) {
+    throw "Node service exited with code $LASTEXITCODE."
+  }
 } finally {
   if ($aiProcess -and -not $aiProcess.HasExited) {
     Write-Host "[start] Stopping face AI service"

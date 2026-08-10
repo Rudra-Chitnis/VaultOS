@@ -17,6 +17,10 @@ if ! command -v python3 &>/dev/null; then
 fi
 PYVER=$(python3 --version)
 echo "[AI] Using $PYVER"
+if ! python3 -c 'import sys; raise SystemExit(0 if sys.version_info[:2] in ((3, 10), (3, 11)) else 1)' >/dev/null 2>&1; then
+    echo "[ERROR] Unsupported Python version. Install Python 3.10 or 3.11 and make it the default python3."
+    exit 1
+fi
 
 # ── Create virtualenv if needed ──────────────────────────────
 if [ ! -f "$SCRIPT_DIR/venv/bin/activate" ]; then
