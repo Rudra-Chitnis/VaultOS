@@ -25,8 +25,12 @@ function Invoke-Checked($FilePath, [string[]]$Arguments, $FailureMessage) {
 
 function Test-PythonVersion($FilePath, [string[]]$Arguments) {
   $versionCheck = "import sys; raise SystemExit(0 if sys.version_info[:2] in ((3, 10), (3, 11)) else 1)"
-  & $FilePath @Arguments -c $versionCheck > $null 2>&1
-  $LASTEXITCODE -eq 0
+  try {
+    & $FilePath @Arguments -c $versionCheck *> $null
+    return $LASTEXITCODE -eq 0
+  } catch {
+    return $false
+  }
 }
 
 function Get-PythonVersion($FilePath, [string[]]$Arguments) {
