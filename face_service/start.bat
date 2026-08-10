@@ -12,25 +12,39 @@ if "%FACE_SERVICE_HOST%"=="" set "FACE_SERVICE_HOST=127.0.0.1"
 if "%FACE_SERVICE_PORT%"=="" set "FACE_SERVICE_PORT=7860"
 
 :: ── Check Python ─────────────────────────────────────────────
+set "PYTHON_CMD=python"
 where python >nul 2>nul
-if errorlevel 1 (
-    echo [ERROR] Python not found. Install Python 3.10 or 3.11 from https://python.org
+if errorlevel 1 set "PYTHON_CMD="
+if not "%PYTHON_CMD%"=="" (
+    %PYTHON_CMD% -c "import sys; raise SystemExit(0 if sys.version_info[:2] in ((3, 10), (3, 11)) else 1)" >nul 2>nul
+    if errorlevel 1 set "PYTHON_CMD="
+)
+if "%PYTHON_CMD%"=="" (
+    where py >nul 2>nul
+    if not errorlevel 1 (
+        py -3.11 -c "import sys; raise SystemExit(0 if sys.version_info[:2] in ((3, 10), (3, 11)) else 1)" >nul 2>nul
+        if not errorlevel 1 set "PYTHON_CMD=py -3.11"
+    )
+)
+if "%PYTHON_CMD%"=="" (
+    where py >nul 2>nul
+    if not errorlevel 1 (
+        py -3.10 -c "import sys; raise SystemExit(0 if sys.version_info[:2] in ((3, 10), (3, 11)) else 1)" >nul 2>nul
+        if not errorlevel 1 set "PYTHON_CMD=py -3.10"
+    )
+)
+if "%PYTHON_CMD%"=="" (
+    echo [ERROR] No supported Python found. Install Python 3.10 or 3.11 from https://python.org
     pause
     exit /b 1
 )
-for /f "tokens=*" %%v in ('python --version 2^>^&1') do set PYVER=%%v
+for /f "tokens=*" %%v in ('%PYTHON_CMD% --version 2^>^&1') do set PYVER=%%v
 echo [AI] Using %PYVER%
-python -c "import sys; raise SystemExit(0 if sys.version_info[:2] in ((3, 10), (3, 11)) else 1)" >nul 2>nul
-if errorlevel 1 (
-    echo [ERROR] Unsupported Python version. Install Python 3.10 or 3.11 and make it the default python.
-    pause
-    exit /b 1
-)
 
 :: ── Create virtualenv if needed ──────────────────────────────
 if not exist "%SCRIPT_DIR%venv\Scripts\activate.bat" (
     echo [AI] Creating virtual environment …
-    python -m venv "%SCRIPT_DIR%venv"
+    %PYTHON_CMD% -m venv "%SCRIPT_DIR%venv"
     if errorlevel 1 (
         echo [ERROR] Failed to create venv. Check Python installation.
         pause

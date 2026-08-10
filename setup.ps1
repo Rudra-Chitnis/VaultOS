@@ -8,6 +8,7 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $FaceDir = Join-Path $Root "face_service"
 $VenvDir = Join-Path $FaceDir "venv"
+$PythonCmd = $null
 
 function Require-Command($Name, $InstallHint) {
   if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
@@ -22,13 +23,36 @@ function Invoke-Checked($FilePath, [string[]]$Arguments, $FailureMessage) {
   }
 }
 
-function Require-PythonVersion() {
+function Test-PythonVersion($FilePath, [string[]]$Arguments) {
   $versionCheck = "import sys; raise SystemExit(0 if sys.version_info[:2] in ((3, 10), (3, 11)) else 1)"
-  & python -c $versionCheck
-  if ($LASTEXITCODE -ne 0) {
-    $actual = (& python --version 2>&1)
-    throw "Unsupported Python version: $actual. Install Python 3.10 or 3.11 and make it the default 'python' before running setup."
+  & $FilePath @Arguments -c $versionCheck > $null 2>&1
+  $LASTEXITCODE -eq 0
+}
+
+function Get-PythonVersion($FilePath, [string[]]$Arguments) {
+  (& $FilePath @Arguments --version 2>&1).ToString().Trim()
+}
+
+function Resolve-Python() {
+  $candidates = @()
+  if (Get-Command "python" -ErrorAction SilentlyContinue) {
+    $candidates += [pscustomobject]@{ File = "python"; Args = @(); Label = "python" }
   }
+  if (Get-Command "py" -ErrorAction SilentlyContinue) {
+    $candidates += [pscustomobject]@{ File = "py"; Args = @("-3.11"); Label = "py -3.11" }
+    $candidates += [pscustomobject]@{ File = "py"; Args = @("-3.10"); Label = "py -3.10" }
+  }
+
+  foreach ($candidate in $candidates) {
+    if (Test-PythonVersion $candidate.File $candidate.Args) {
+      return $candidate
+    }
+  }
+
+  $seen = ($candidates | ForEach-Object {
+    try { "$($_.Label): $(Get-PythonVersion $_.File $_.Args)" } catch { "$($_.Label): unavailable" }
+  }) -join "; "
+  throw "No supported Python found. Install Python 3.10 or 3.11. Checked: $seen"
 }
 
 function Get-Sha256($Text) {
@@ -49,9 +73,8 @@ if (-not $SkipNode) {
 }
 
 if (-not $SkipPython) {
-  Require-Command "python" "Install Python 3.10 or 3.11: https://python.org/"
-  Write-Host "[setup] Python: $(python --version)"
-  Require-PythonVersion
+  $PythonCmd = Resolve-Python
+  Write-Host "[setup] Python: $(Get-PythonVersion $PythonCmd.File $PythonCmd.Args) via $($PythonCmd.Label)"
 }
 
 foreach ($dir in @("media", "media\.thumbs", "media\.face-thumbs")) {
@@ -97,7 +120,7 @@ if (-not $SkipNode) {
 if (-not $SkipPython) {
   if (-not (Test-Path -LiteralPath (Join-Path $VenvDir "Scripts\python.exe"))) {
     Write-Host "[setup] Creating Python virtual environment"
-    python -m venv $VenvDir
+    Invoke-Checked $PythonCmd.File ($PythonCmd.Args + @("-m", "venv", $VenvDir)) "Python virtual environment creation failed."
   }
   $VenvPython = Join-Path $VenvDir "Scripts\python.exe"
   Write-Host "[setup] Installing Python dependencies"
