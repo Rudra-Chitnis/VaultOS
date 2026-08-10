@@ -1,0 +1,35 @@
+# Vault OS AI Microservice — Python dependencies
+# Install with: pip install -r requirements.txt
+#
+# IMPORTANT: Install in this order on Windows to avoid build conflicts:
+#   1. pip install numpy==1.26.4
+#   2. pip install onnxruntime  (or onnxruntime-gpu for CUDA)
+#   3. pip install insightface
+#   4. pip install -r requirements.txt
+
+# ── Web framework ───────────────────────────────────────────────
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12
+pydantic==2.9.2
+
+# ── InsightFace (detection + recognition) ───────────────────────
+# Uses buffalo_l model pack: SCRFD-10G detector + ArcFace R50 embedder
+# Models auto-downloaded on first run to ~/.insightface/models/buffalo_l/
+insightface==0.7.3
+onnxruntime==1.20.1          # CPU-only; swap for onnxruntime-gpu if you have CUDA
+
+# ── Clustering ──────────────────────────────────────────────────
+hdbscan==0.8.39              # density-based clustering (no K needed)
+scikit-learn==1.5.2          # required by hdbscan
+
+# ── Vector search ───────────────────────────────────────────────
+faiss-cpu==1.9.0             # fast nearest-neighbor; swap for faiss-gpu if you have CUDA
+
+# ── Image processing ────────────────────────────────────────────
+opencv-python-headless==4.10.0.84   # headless: no GUI deps (safe on servers)
+Pillow==11.0.0               # EXIF-aware image loading fallback
+numpy==1.26.4                # pinned: hdbscan + insightface need numpy <2
+
+# ── Utilities ───────────────────────────────────────────────────
+python-dotenv==1.0.1         # optional: load .env from face_service/.env

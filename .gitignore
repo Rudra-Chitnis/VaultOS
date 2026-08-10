@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# User media and generated runtime state
+media/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+
+# Generated thumbnails, face chips, and model binaries
+media/.thumbs/
+media/.face-thumbs/
+face_models/*.onnx
+*.onnx
+
+# Python environments and caches
+venv/
+.venv/
+env/
+.env/
+face_service/venv/
+face_service/.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs and process output
+logs/
+*.log
+pm2.log
+
+# OS / editor artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Build / temp output
+dist/
+build/
+coverage/
+tmp/
+temp/

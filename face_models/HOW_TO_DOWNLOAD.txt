@@ -1,0 +1,61 @@
+VAULT OS — Face Model Setup
+===========================
+
+The face recognition system requires two ONNX model files from InsightFace's
+"buffalo_l" model pack.  These are large binary files (~200 MB total) and are
+NOT included in the repository.
+
+Download instructions
+---------------------
+
+1. Go to the InsightFace model zoo release page:
+   https://github.com/deepinsight/insightface/releases/tag/v0.7
+
+2. Download the buffalo_l archive:
+   File: buffalo_l.zip  (approx. 326 MB)
+   Direct URL:
+   https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip
+
+   Or via command line:
+   curl -L -o buffalo_l.zip "https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip"
+
+3. Extract the archive.  Inside you will find several files.  Copy ONLY these two
+   into this directory (face_models/):
+
+     det_10g.onnx   — SCRFD-10G face detector (~16 MB)
+     w600k_r50.onnx — ArcFace R50 face recogniser (~166 MB)
+
+   Final layout expected by the server:
+     face_models/
+       det_10g.onnx
+       w600k_r50.onnx
+       HOW_TO_DOWNLOAD.txt   ← this file
+
+4. Restart the server.  The worker will automatically detect the models and
+   transition from MODELS_MISSING → IDLE state.  You can then trigger the
+   initial scan via:
+
+     POST /api/faces/scan/start
+
+Checksums (SHA-256) for verification
+-------------------------------------
+det_10g.onnx   : verify against InsightFace release notes
+w600k_r50.onnx : verify against InsightFace release notes
+
+Notes
+-----
+- The models run on CPU by default.  On Windows, GPU acceleration via
+  DirectML is attempted first and falls back to CPU automatically.
+- RAM usage while scanning: approx. 600–900 MB peak (models loaded once,
+  shared for all inference jobs).
+- If you have less than 2 GB free RAM, set FACE_WORKER_CONCURRENCY=1 in .env.
+- The face index database is stored at media/face_index.db and is excluded
+  from version control via .gitignore.
+
+Environment variables (all optional)
+--------------------------------------
+FACE_SIMILARITY_THRESHOLD   Cosine similarity to merge faces into a person  (default: 0.50)
+FACE_MARGIN_THRESHOLD       Min gap above second-best match to accept        (default: 0.05)
+FACE_WORKER_CONCURRENCY     Max parallel inference jobs in worker             (default: 2)
+FACE_DEBUG                  Set to 1 for verbose inference logging            (default: off)
+FACE_LOG_JSON               Set to 1 for machine-readable JSON log lines      (default: off)

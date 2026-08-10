@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ACCESS DENIED — AUTHENTICATE</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&family=Bebas+Neue&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --r:#FF2B2B;
+  --bg:#080808;
+  --s:#0d0d0d;
+  --s2:#111;
+  --br:rgba(255,255,255,.05);
+  --t:rgba(255,255,255,.85);
+  --t2:rgba(255,255,255,.4);
+  --t3:rgba(255,255,255,.15);
+  --green:#00ff41;
+}
+
+html,body{height:100%;overflow:hidden}
+
+body{
+  background:var(--bg);
+  color:var(--t2);
+  font-family:'IBM Plex Mono',monospace;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── Scanlines overlay ── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.06) 0px,rgba(0,0,0,.06) 1px,transparent 1px,transparent 2px);
+  pointer-events:none;z-index:100;
+}
+
+/* ── Noise grain ── */
+body::after{
+  content:'';position:fixed;
+  inset:-50%;width:200%;height:200%;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:99;opacity:.5;
+  animation:nshift 10s steps(10) infinite;
+}
+@keyframes nshift{
+  0%{transform:translate(0,0)}20%{transform:translate(1%,2%)}
+  40%{transform:translate(-2%,1%)}60%{transform:translate(1%,-1%)}
+  80%{transform:translate(-1%,2%)}100%{transform:translate(0,0)}
+}
+
+/* ── Vignette ── */
+#vignette{
+  position:fixed;inset:0;
+  background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.7) 100%);
+  pointer-events:none;z-index:98;
+}
+
+/* ── Red flash bg ── */
+@keyframes redflash{0%,100%{background:transparent}50%{background:rgba(255,43,43,.04)}}
+#flash{position:fixed;inset:0;z-index:1;animation:redflash 3s ease infinite;pointer-events:none}
+
+/* ── Top classified bar ── */
+#classbar{
+  position:relative;z-index:50;
+  background:var(--r);
+  padding:5px 0;
+  text-align:center;
+  overflow:hidden;
+}
+#classbar span{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:11px;
+  color:#000;
+  letter-spacing:.5em;
+}
+#classbar::after{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,transparent 0,transparent 40px,rgba(0,0,0,.12) 40px,rgba(0,0,0,.12) 42px);
+}
+
+/* ── Header ── */
+#hdr{
+  position:relative;z-index:50;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:16px 24px;
+  border-bottom:1px solid var(--br);
+}
+.hdr-access{font-size:9px;letter-spacing:.4em;color:rgba(255,255,255,.2);text-transform:uppercase}
+.hdr-denied{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:26px;color:var(--r);letter-spacing:.08em;line-height:1;
+  text-shadow:0 0 30px rgba(255,43,43,.2);
+}
+.hdr-status{
+  display:flex;align-items:center;gap:8px;
+  font-size:9px;letter-spacing:.2em;color:var(--green);text-transform:uppercase;
+}
+.hdr-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--green);
+  animation:pingaui .9s cubic-bezier(0,0,.2,1) infinite;
+}
+@keyframes pingaui{75%,100%{transform:scale(1.8);opacity:0}}
+
+/* ── Main ── */
+main{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:24px 16px;position:relative;z-index:50;
+}
+.inner{width:100%;max-width:min(520px,calc(100vw - 32px))}
+
+/* ── Glitch title ── */
+.auth-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(56px,10vw,88px);
+  color:var(--r);line-height:1;
+  text-align:center;
+  text-shadow:0 0 40px rgba(255,43,43,.2);
+  animation:glitch 6s steps(1) infinite;
+}
+@keyframes glitch{
+  0%  {text-shadow: 3px 0 var(--r),-3px 0 #00ffff;clip-path:inset(0 0 95% 0)}
+  5%  {text-shadow:-3px 0 var(--r), 3px 0 #00ffff;clip-path:inset(10% 0 85% 0)}
+  10% {text-shadow: 3px 0 var(--r),-3px 0 #00ffff;clip-path:inset(40% 0 50% 0)}
+  15% {text-shadow:-3px 0 var(--r), 3px 0 #00ffff;clip-path:inset(80% 0 5% 0)}
+  20%,100%{text-shadow:none;clip-path:inset(0 0 0 0)}
+}
+.auth-sub{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:10px;margin-bottom:32px;
+  font-size:9px;letter-spacing:.3em;color:rgba(255,255,255,.2);text-transform:uppercase;
+}
+.auth-sub-line{width:32px;height:1px;background:rgba(255,43,43,.3)}
+
+/* ── Card with corner brackets ── */
+.card{
+  position:relative;
+  max-width:360px;
+  margin-left:auto;
+  margin-right:auto;
+  padding:30px 28px 26px;
+  background:var(--s);
+  border:1px solid var(--br);
+}
+.card::before,.card::after,.cb-bl,.cb-br{
+  content:'';position:absolute;width:16px;height:16px;
+  border-color:var(--r);border-style:solid;opacity:.5;
+}
+.card::before{top:-8px;left:-8px;border-width:2px 0 0 2px}
+.card::after {top:-8px;right:-8px;border-width:2px 2px 0 0}
+.cb-bl{bottom:-8px;left:-8px;border-width:0 0 2px 2px}
+.cb-br{bottom:-8px;right:-8px;border-width:0 2px 2px 0}
+
+.card-label{
+  font-size:9px;letter-spacing:.3em;color:rgba(255,255,255,.2);
+  text-transform:uppercase;margin-bottom:20px;
+}
+.card-label span{color:var(--r);margin-right:4px}
+
+/* ── Password input ── */
+.pwd-wrap{position:relative;margin-bottom:14px}
+.pwd-prefix{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  color:var(--r);font-size:12px;pointer-events:none;user-select:none;
+}
+#pwd-input{
+  width:100%;background:var(--s2);
+  border:1px solid rgba(255,255,255,.1);
+  color:rgba(255,255,255,.85);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;letter-spacing:.15em;
+  padding:11px 52px 11px 28px;
+  outline:none;
+  transition:border-color .15s,box-shadow .15s;
+}
+#pwd-input::placeholder{color:rgba(255,255,255,.18)}
+#pwd-input:focus{
+  border-color:var(--r);
+  box-shadow:0 0 0 1px var(--r),0 0 20px rgba(255,43,43,.12);
+}
+#toggle-vis{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;
+  color:rgba(255,255,255,.25);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  cursor:pointer;transition:color .12s;padding:2px;
+}
+#toggle-vis:hover{color:rgba(255,255,255,.5)}
+
+/* ── Error message ── */
+#error-msg{
+  display:none;
+  margin-bottom:14px;padding:8px 12px;
+  background:rgba(100,0,0,.25);
+  border:1px solid rgba(255,43,43,.3);
+  color:rgba(255,100,100,.9);
+  font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+}
+
+/* ── Loading bar ── */
+#loading-bar{
+  display:none;
+  margin-bottom:14px;
+  height:1px;background:rgba(255,255,255,.05);
+  position:relative;overflow:hidden;
+}
+#loading-bar::after{
+  content:'';position:absolute;top:0;left:-60%;width:60%;height:100%;
+  background:var(--r);
+  animation:lslide .8s ease infinite;
+}
+@keyframes lslide{to{left:100%}}
+
+/* ── Submit button ── */
+#login-btn{
+  width:100%;background:var(--r);
+  border:none;
+  color:#fff;
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;font-size:11px;
+  letter-spacing:.2em;text-transform:uppercase;
+  padding:13px;cursor:pointer;
+  transition:background .15s,transform .1s;
+  animation:panic-pulse 2s infinite;
+}
+#login-btn:hover{background:#cc2222}
+#login-btn:active{transform:scale(.98)}
+#login-btn:disabled{opacity:.6;cursor:default;animation:none}
+@keyframes panic-pulse{
+  0%  {box-shadow:0 0 0 0 rgba(255,43,43,.5)}
+  70% {box-shadow:0 0 0 8px rgba(255,43,43,0)}
+  100%{box-shadow:0 0 0 0 rgba(255,43,43,0)}
+}
+
+.card-hint{
+  margin-top:18px;
+  font-size:8px;letter-spacing:.2em;color:rgba(255,255,255,.12);
+  text-transform:uppercase;text-align:center;
+}
+
+/* ── Shake animation ── */
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  15%{transform:translateX(-8px)}30%{transform:translateX(8px)}
+  45%{transform:translateX(-6px)}60%{transform:translateX(6px)}
+  75%{transform:translateX(-3px)}90%{transform:translateX(3px)}
+}
+.shake{animation:shake .5s ease}
+
+/* ── Terminal log ── */
+#termlog{
+  margin-top:24px;
+  max-width:360px;
+  margin-left:auto;
+  margin-right:auto;
+  border:1px solid var(--br);
+  background:#0a0a0a;
+  padding:14px;
+  max-height:120px;
+  overflow-y:auto;
+}
+#termlog::-webkit-scrollbar{width:2px}
+#termlog::-webkit-scrollbar-thumb{background:rgba(255,43,43,.3)}
+.log-header{font-size:8px;letter-spacing:.3em;color:rgba(255,255,255,.12);text-transform:uppercase;margin-bottom:8px}
+.log-line{font-size:9px;letter-spacing:.08em;color:rgba(255,255,255,.25);line-height:1.8}
+.log-tag{color:var(--r)}
+.log-ok  .log-tag{color:#2ecc71}
+.log-warn .log-tag{color:#e67e22}
+.log-err .log-tag{color:var(--r)}
+
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.cursor{animation:blink 1s step-end infinite}
+
+/* ── Footer ── */
+footer{
+  position:relative;z-index:50;
+  border-top:1px solid var(--br);
+  padding:8px 24px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.ft{font-size:8px;letter-spacing:.2em;text-transform:uppercase}
+.ft-brand{color:rgba(255,43,43,.3)}
+.ft-info{color:rgba(255,255,255,.12)}
+</style>
+</head>
+<body>
+<div id="vignette"></div>
+<div id="flash"></div>
+
+<div id="classbar"><span>⬛ CLASSIFIED &nbsp;·&nbsp; RESTRICTED ACCESS &nbsp;·&nbsp; EYES ONLY ⬛</span></div>
+
+<div id="hdr">
+  <div>
+    <div class="hdr-access">access</div>
+    <div class="hdr-denied">DENIED</div>
+  </div>
+  <div class="hdr-status">
+    <span class="hdr-dot"></span>
+    Awaiting Auth
+  </div>
+</div>
+
+<main>
+  <div class="inner">
+    <div class="auth-title">AUTHENTICATE</div>
+    <div class="auth-sub">
+      <span class="auth-sub-line"></span>
+      <span>Private Vault — Local Session</span>
+      <span class="auth-sub-line"></span>
+    </div>
+
+    <div class="card" id="login-card">
+      <div class="cb-bl"></div>
+      <div class="cb-br"></div>
+
+      <div class="card-label"><span>›</span> Enter passphrase to proceed</div>
+
+      <div class="pwd-wrap">
+        <div class="pwd-prefix">_</div>
+        <input id="pwd-input" type="password" placeholder="PASSPHRASE"
+               autocomplete="current-password"
+               onkeydown="if(event.key==='Enter') attemptLogin()"/>
+        <button id="toggle-vis" onclick="toggleVisible()" type="button">SHOW</button>
+      </div>
+
+      <div id="error-msg">⚠ ACCESS DENIED — Invalid Passphrase</div>
+      <div id="loading-bar"></div>
+
+      <button id="login-btn" onclick="attemptLogin()">INITIATE ACCESS</button>
+
+      <div class="card-hint">Single operator · Session expires in 8 hours</div>
+    </div>
+
+    <div id="termlog">
+      <div class="log-header">SYS_LOG</div>
+      <div id="log-lines">
+        <div class="log-line"><span class="log-tag">[SYS]</span> Vault node initialized</div>
+        <div class="log-line"><span class="log-tag">[SYS]</span> Auth module active</div>
+        <div class="log-line"><span class="log-tag">[SYS]</span> Awaiting credentials<span class="cursor">_</span></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span class="ft ft-brand">⬛ ACCESSDENIED</span>
+  <span class="ft ft-info" id="footer-host"></span>
+  <span class="ft ft-info" id="footer-ts"></span>
+</footer>
+
+<script>
+  document.getElementById('footer-host').textContent =
+    window.location.hostname + (window.location.port ? ':' + window.location.port : '');
+
+  const updateTs = () => {
+    document.getElementById('footer-ts').textContent =
+      new Date().toTimeString().split(' ')[0] + ' LOCAL';
+  };
+  setInterval(updateTs, 1000);
+  updateTs();
+
+  function toggleVisible() {
+    const inp = document.getElementById('pwd-input');
+    const btn = document.getElementById('toggle-vis');
+    if (inp.type === 'password') { inp.type = 'text';     btn.textContent = 'HIDE'; }
+    else                         { inp.type = 'password'; btn.textContent = 'SHOW'; }
+  }
+
+  function addLog(msg, type = 'info') {
+    const tags = { info: '[SYS]', warn: '[WARN]', error: '[ERR]', ok: '[OK]' };
+    const div = document.createElement('div');
+    div.className = 'log-line log-' + type;
+    div.innerHTML = `<span class="log-tag">${tags[type]}</span> ${msg}`;
+    const logEl = document.getElementById('log-lines');
+    logEl.appendChild(div);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function shakeCard() {
+    const card = document.getElementById('login-card');
+    card.classList.add('shake');
+    setTimeout(() => card.classList.remove('shake'), 600);
+  }
+
+  let isLoading = false;
+
+  async function attemptLogin() {
+    if (isLoading) return;
+    const pwd = document.getElementById('pwd-input').value.trim();
+    if (!pwd) { shakeCard(); addLog('Empty passphrase rejected', 'warn'); return; }
+
+    isLoading = true;
+    const btn     = document.getElementById('login-btn');
+    const errMsg  = document.getElementById('error-msg');
+    const loadBar = document.getElementById('loading-bar');
+
+    btn.textContent = 'AUTHENTICATING...';
+    btn.disabled    = true;
+    errMsg.style.display  = 'none';
+    loadBar.style.display = 'block';
+    addLog('Passphrase received — verifying...', 'info');
+
+    try {
+      const res  = await fetch('/api/login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ password: pwd }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.ok) {
+        addLog('Identity confirmed — session established', 'ok');
+        addLog('Redirecting to vault...', 'ok');
+        btn.textContent = 'ACCESS GRANTED';
+        btn.style.background = '#1a6e3a';
+        btn.style.animation  = 'none';
+        setTimeout(() => { window.location.href = '/app'; }, 600);
+      } else if (res.status === 429) {
+        throw new Error('rate_limited');
+      } else {
+        throw new Error('denied');
+      }
+    } catch (err) {
+      isLoading = false;
+      btn.textContent = 'INITIATE ACCESS';
+      btn.disabled    = false;
+      loadBar.style.display = 'none';
+      errMsg.style.display  = 'block';
+      errMsg.textContent = err && err.message === 'rate_limited'
+        ? '⚠ TOO MANY ATTEMPTS — TRY AGAIN LATER'
+        : '⚠ ACCESS DENIED — Invalid Passphrase';
+      addLog(err && err.message === 'rate_limited'
+        ? 'Rate limit reached — locked out temporarily'
+        : 'Passphrase rejected — unauthorised', 'error');
+      shakeCard();
+      document.getElementById('pwd-input').value = '';
+      document.getElementById('pwd-input').focus();
+    }
+  }
+
+  window.onload = () => {
+    document.getElementById('pwd-input').focus();
+    fetch('/api/check')
+      .then(r => r.json())
+      .then(d => { if (d.authenticated) window.location.href = '/app'; })
+      .catch(() => {});
+  };
+</script>
+</body>
+</html>
