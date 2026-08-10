@@ -7,8 +7,11 @@
     "start": "node server.js",
     "setup": "powershell -ExecutionPolicy Bypass -File ./setup.ps1",
     "start:all": "powershell -ExecutionPolicy Bypass -File ./start.ps1",
-    "pm2:start": "pm2 start ecosystem.config.js",
-    "pm2:stop": "pm2 stop ecosystem.config.js"
+    "pm2:start": "powershell -ExecutionPolicy Bypass -File ./pm2.ps1 start",
+    "pm2:stop": "powershell -ExecutionPolicy Bypass -File ./pm2.ps1 stop",
+    "pm2:status": "powershell -ExecutionPolicy Bypass -File ./pm2.ps1 status",
+    "pm2:restart": "powershell -ExecutionPolicy Bypass -File ./pm2.ps1 restart",
+    "pm2:logs": "powershell -ExecutionPolicy Bypass -File ./pm2.ps1 logs"
   },
   "keywords": [],
   "author": "",

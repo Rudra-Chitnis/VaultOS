@@ -37,6 +37,7 @@ __pycache__/
 logs/
 *.log
 pm2.log
+.pm2/
 
 # OS / editor artifacts
 .DS_Store

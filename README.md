@@ -162,12 +162,13 @@ After running setup:
 
 ```powershell
 npm run pm2:start
-pm2 status
-pm2 logs
-pm2 stop ecosystem.config.js
+npm run pm2:status
+npm run pm2:logs
+npm run pm2:restart
+npm run pm2:stop
 ```
 
-`ecosystem.config.js` is portable: it uses the repository directory as `cwd` and the repo-local Python virtualenv by default. Override Python with:
+The npm PM2 scripts set `PM2_HOME` to the repo-local ignored `.pm2/` directory so inherited machine-specific PM2 settings do not leak into the deployment. `ecosystem.config.js` is portable: it uses the repository directory as `cwd` and the repo-local Python virtualenv by default. Override Python with:
 
 ```powershell
 $env:VAULTOS_PYTHON="C:\Path\To\python.exe"
