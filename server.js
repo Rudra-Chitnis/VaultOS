@@ -761,10 +761,10 @@ app.use('/media', auth,
 );
 
 // ── Static: frontend assets (explicit whitelist, auth-gated) ─────────────────
-// Only serves the single JS file that index.html loads at runtime.
+// Only serves the specific stylesheet/JS files that index.html loads at runtime.
 // Sensitive files (server.js, .env, package.json, node_modules) are never
 // matched here and fall through to Express's default 404 handler.
-const FRONTEND_WHITELIST = new Set(['upload.js']);
+const FRONTEND_WHITELIST = new Set(['upload.js', 'app.js', 'app.css', 'login.css']);
 app.get('/:file', auth, (req, res, next) => {
   if (!FRONTEND_WHITELIST.has(req.params.file)) return next();
   sendAsset(res, req.params.file); // absolute path, no { root } option
@@ -772,7 +772,7 @@ app.get('/:file', auth, (req, res, next) => {
 
 // ═══════════════════════════════════════════════════════════════
 //  FACE INDEXING SUBSYSTEM
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════���═══════════════════════════════════════════
 
 // ── Face DB ────────────────────────────────────────────────────
 // Opens READWRITE + full schema setup (create:true).
