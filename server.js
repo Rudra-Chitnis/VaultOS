@@ -127,6 +127,16 @@ function ftype(name) {
 function tname(name) { return crypto.createHash('md5').update(name).digest('hex') + '.jpg'; }
 function tpath(name)  { return path.join(THUMBS_DIR, tname(name)); }
 
+// Deterministic pseudo-random rank for a (seed, filename) pair — used by
+// sort=random. Same seed + same filename always produces the same rank, so
+// one seed defines one stable full-list ordering across every page of a
+// paginated request. A different seed produces a different ordering.
+// Uses the already-imported crypto module — no new dependency.
+function seededRank(seed, name) {
+  const h = crypto.createHash('md5').update(`${seed}\u0000${name}`).digest();
+  return h.readUInt32BE(0);
+}
+
 // ── Sharp ─────────────────────────────────────────────────────
 let sharp = null;
 try { sharp = require('sharp'); } catch {}
@@ -379,6 +389,11 @@ function invalidateCache() {
   invalidateHashMap();
 }
 
+// Each cached entry is { name, mtimeMs } — mtimeMs is the real filesystem
+// modification time (fs.promises.stat), read fresh whenever the 30s cache is
+// rebuilt. This lets /api/files sort by actual mtime without a DB column and
+// without re-statting the directory on every request. Default/fallback order
+// is still natural filename order (applied below, before stat is attached).
 async function getFiles() {
   if (fileCache && Date.now() - fileCacheTime < FILE_CACHE_TTL) return fileCache;
 
@@ -386,10 +401,22 @@ async function getFiles() {
   if (fileCachePending) return fileCachePending;
 
   const myGen = fileCacheGen;
-  const p = fs.promises.readdir(MEDIA_DIR).then(raw => {
-    const result = raw
+  const p = fs.promises.readdir(MEDIA_DIR).then(async raw => {
+    const names = raw
       .filter(f => !f.startsWith('.') && !f.startsWith('_') && ALL_RE.test(f))
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+    const result = await Promise.all(names.map(async name => {
+      let mtimeMs = 0;
+      try {
+        const st = await fs.promises.stat(path.join(MEDIA_DIR, name));
+        mtimeMs = st.mtimeMs;
+      } catch {
+        // File may have been removed/renamed mid-scan — keep it in the listing
+        // with mtimeMs 0 so it sorts predictably instead of throwing.
+      }
+      return { name, mtimeMs };
+    }));
 
     // Only commit if cache wasn't invalidated while we were reading
     if (fileCacheGen === myGen) {
@@ -420,7 +447,7 @@ async function getHashMap() {
   try {
     const files = await getFiles(); // reuses cache; never blocks the event loop
     const map   = {};
-    files.forEach(f => { map[crypto.createHash('md5').update(f).digest('hex')] = f; });
+    files.forEach(f => { map[crypto.createHash('md5').update(f.name).digest('hex')] = f.name; });
     hashMap     = map;
     hashMapTime = now;
     return map;
@@ -434,7 +461,7 @@ function invalidateHashMap() { hashMap = null; }
 // overwhelming the OS with thousands of queued file ops at once.
 async function prewarm() {
   const files = await getFiles();
-  const todo  = files.filter(f => !fs.existsSync(tpath(f)));
+  const todo  = files.filter(f => !fs.existsSync(tpath(f.name))).map(f => f.name);
   if (!todo.length) { console.log('✅ All thumbnails cached'); return; }
   console.log(`🔄 Pre-warming ${todo.length} missing thumbnails…`);
 
@@ -515,13 +542,39 @@ app.get('/api/files', auth, async (req, res) => {
   const lim    = Math.min(80, Math.max(10, parseInt(req.query.limit) || 60));
   const search = (req.query.search || '').toLowerCase().trim();
   const type   = req.query.type || 'all';
+  const sort   = req.query.sort; // 'newest' | 'oldest' | 'random' | anything else = default order
+  const seed   = (req.query.seed || '0').toString().slice(0, 64); // opaque; only used when sort === 'random'
 
-  let files = await getFiles();
-  if (type !== 'all') files = files.filter(f => ftype(f) === type);
-  if (search)         files = files.filter(f => f.toLowerCase().includes(search));
+  let files = await getFiles(); // [{ name, mtimeMs }], natural filename order by default
+  if (type !== 'all') files = files.filter(f => ftype(f.name) === type);
+  if (search)         files = files.filter(f => f.name.toLowerCase().includes(search));
 
-  const total = files.length;
-  const slice = files.slice(pg * lim, (pg + 1) * lim);
+  // Sort BEFORE pagination. Any missing/unknown sort value leaves the
+  // existing natural-filename ordering from getFiles() untouched.
+  if (sort === 'newest' || sort === 'oldest') {
+    files = files.slice().sort((a, b) => {
+      const diff = sort === 'newest' ? b.mtimeMs - a.mtimeMs : a.mtimeMs - b.mtimeMs;
+      if (diff !== 0) return diff;
+      // Identical mtimeMs — fall back to the same natural filename ordering
+      // used everywhere else, for a deterministic result.
+      return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+    });
+  } else if (sort === 'random') {
+    // Deterministic shuffle: the same seed always produces the same full-list
+    // ordering, so paginating through it (page 0, 1, 2, ...) yields a single
+    // consistent randomized sequence with no duplicates/gaps. A new seed
+    // (sent by the client on a fresh Random session) gives a new ordering.
+    files = files.slice().sort((a, b) => {
+      const ra = seededRank(seed, a.name);
+      const rb = seededRank(seed, b.name);
+      if (ra !== rb) return ra - rb;
+      return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+    });
+  }
+
+  const total      = files.length;
+  const slice      = files.slice(pg * lim, (pg + 1) * lim);
+  const sliceNames = slice.map(f => f.name);
 
   // Augment with face person IDs from face DB (non-blocking — faceDB may be null)
   let faceMap = new Map();
@@ -529,12 +582,12 @@ app.get('/api/files', auth, async (req, res) => {
   if (db) {
     try {
       const { getIndexedFaceBatch } = require('./face-db');
-      faceMap = await getIndexedFaceBatch(db, slice);
+      faceMap = await getIndexedFaceBatch(db, sliceNames);
     } catch (_) { /* face DB not ready — skip silently */ }
   }
 
   res.json({
-    items: slice.map(name => ({
+    items: sliceNames.map(name => ({
       name,
       type:          ftype(name),
       thumb:         `/thumbs/${tname(name)}`,
@@ -546,8 +599,8 @@ app.get('/api/files', auth, async (req, res) => {
   });
 
   // Enqueue background generation for this page's files (non-priority)
-  slice.forEach(f => enqueue(f, false));
-  if (db) enqueueDiscoveredFaceFiles(db, slice).catch(() => {});
+  sliceNames.forEach(f => enqueue(f, false));
+  if (db) enqueueDiscoveredFaceFiles(db, sliceNames).catch(() => {});
 });
 
 // ── All filenames — lightweight endpoint for favorites mode ───
@@ -557,9 +610,9 @@ app.get('/api/files', auth, async (req, res) => {
 app.get('/api/filenames', auth, async (req, res) => {
   const search = (req.query.search || '').toLowerCase().trim();
   let files = await getFiles();
-  if (search) files = files.filter(f => f.toLowerCase().includes(search));
+  if (search) files = files.filter(f => f.name.toLowerCase().includes(search));
   res.json({
-    items: files.map(name => ({
+    items: files.map(({ name }) => ({
       name,
       type:  ftype(name),
       thumb: `/thumbs/${tname(name)}`,

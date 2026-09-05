@@ -91,6 +91,15 @@ body::before{content:'';position:fixed;inset:0;
 .ft:hover{color:var(--t2);border-color:var(--br2)}
 .ft.on{background:var(--r);border-color:var(--r);color:#fff;box-shadow:0 0 12px rgba(255,43,43,.25)}
 
+/* sort control — compact, matches .ft/.lm-wrap visual language */
+.sort-wrap{display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:6px}
+.sort-wrap label{font-size:10px;color:var(--t3);font-family:'IBM Plex Mono',monospace;letter-spacing:.03em;white-space:nowrap}
+.sort-sel{padding:4px 10px;background:var(--s3);border:1px solid transparent;border-radius:14px;color:var(--t2);font-size:11px;font-family:'IBM Plex Mono',monospace;cursor:pointer;letter-spacing:.03em;transition:all .15s}
+.sort-sel:hover{border-color:var(--br2)}
+.sort-sel:focus{outline:none;border-color:var(--r)}
+#sort-shuffle svg{transition:transform .3s ease}
+#sort-shuffle:hover svg{transform:rotate(180deg)}
+
 /* status */
 #st{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:4px 12px;background:rgba(6,6,15,.6);border-bottom:1px solid var(--br)}
 #stx{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3);white-space:nowrap}
@@ -783,9 +792,21 @@ body.rail-collapsed #main{margin-left:var(--rail-c)}
     <button class="ft" data-t="image">Images</button>
     <button class="ft" data-t="video">Videos</button>
     <button class="ft" data-t="gif">GIFs</button>
+    <button class="ft" data-t="fav">Favorites</button>
     <button class="ft" data-t="recent">Recent</button>
     <button class="ft" data-t="viewed">Most Viewed</button>
     <span style="flex:1"></span>
+    <div class="sort-wrap" id="sort-wrap">
+      <label for="sort-sel">Sort</label>
+      <select id="sort-sel" class="sort-sel" title="Change sort order">
+        <option value="random">Random</option>
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
+      </select>
+      <button class="lm-btn" id="sort-shuffle" title="Shuffle again" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+      </button>
+    </div>
     <div class="lm-wrap" id="lm-wrap">
       <button class="lm-btn on" data-layout="grid" title="Grid">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx=".5"/><rect x="9" y="1" width="6" height="6" rx=".5"/><rect x="1" y="9" width="6" height="6" rx=".5"/><rect x="9" y="9" width="6" height="6" rx=".5"/></svg>
@@ -986,6 +1007,17 @@ const MAX_LOAD = 6;    // max simultaneous thumb loads
 // ─────────────────────────────────────────────────────────────
 let items=[], total=0, pg=0, loading=false, more=true;
 let ctype='all', csearch='';
+// Sort order for normal (all/image/video/gif) media requests — server-side only.
+// Single source of truth. Random is always the starting state for a fresh
+// gallery session — intentionally NOT restored from localStorage, so every
+// reload starts shuffled again. Switching to Newest/Oldest only affects the
+// current session.
+let csort = 'random';
+// One seed per Random gallery session — sent with every paginated request so
+// the server can produce one consistent shuffled ordering across all pages.
+// Regenerated on fresh load and whenever the user switches back into Random.
+function genRandomSeed() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+let crandseed = genRandomSeed();
 // Generation counter — incremented on every tab/reset so in-flight fetches from
 // a previous tab can detect they're stale and discard their results.
 let _fetchGen = 0;
@@ -1038,6 +1070,11 @@ let cols=COLS_D, cw=0, rh=0;
 let currentLayout = localStorage.getItem('vault_layout') || 'grid';
 // _positions: per-item {x,y,w,h} used in masonry mode
 let _positions = [];
+// Column-height accumulator for incremental masonry layout — persists across
+// paginated loads so _computeMasonryPositions only positions NEW items
+// instead of recomputing the entire gallery from scratch on every page.
+// Reset (set to null) everywhere _positions is cleared.
+let _masonryColHeights = null;
 
 // Virtual scroll — recycled card pool
 // pool: array of {el, idx} — cards currently rendered
@@ -1108,15 +1145,25 @@ function _hashAspect(str) {
 }
 
 function _computeMasonryPositions() {
-  const colHeights = new Array(cols).fill(0);
-  _positions = items.map(item => {
+  // Incremental: if the column count changed (resize/layout switch) or the
+  // position list was reset, start a fresh column-height accumulator.
+  // Otherwise, only lay out items beyond what's already positioned — this
+  // avoids re-walking the whole gallery (potentially thousands of items) on
+  // every paginated page load, which previously made masonry mode slower the
+  // further a user scrolled.
+  if (!_masonryColHeights || _masonryColHeights.length !== cols || _positions.length > items.length) {
+    _masonryColHeights = new Array(cols).fill(0);
+    _positions = [];
+  }
+  for (let i = _positions.length; i < items.length; i++) {
+    const item = items[i];
     const aspect = _hashAspect(item.name || '');
     const h = Math.round(cw * aspect);
-    const colIdx = colHeights.indexOf(Math.min(...colHeights));
-    const pos = { x: colIdx * (cw + GAP), y: colHeights[colIdx], w: cw, h };
-    colHeights[colIdx] += h + GAP;
-    return pos;
-  });
+    const colIdx = _masonryColHeights.indexOf(Math.min(..._masonryColHeights));
+    const pos = { x: colIdx * (cw + GAP), y: _masonryColHeights[colIdx], w: cw, h };
+    _masonryColHeights[colIdx] += h + GAP;
+    _positions.push(pos);
+  }
 }
 
 function layout() {
@@ -1493,6 +1540,7 @@ async function fetchPage(reset=false) {
     _previewCount = 0;                        // hard-reset counter — prevents drift across tabs
     loadQ = []; loadActive = 0;
     _positions = [];                          // reset masonry positions on new fetch
+    _masonryColHeights = null;
     gwEl.scrollTop = 0;
     layout(); updateSpacer();
   }
@@ -1540,7 +1588,10 @@ async function fetchPage(reset=false) {
     }
 
     // ── Normal paginated mode ────────────────────────────────
-    const r = await fetch(`/api/files?page=${pg}&limit=${PAGE}&type=${ctype}&search=${encodeURIComponent(csearch)}`);
+    const sortQS = csort === 'random'
+      ? `sort=random&seed=${encodeURIComponent(crandseed)}`
+      : `sort=${encodeURIComponent(csort)}`;
+    const r = await fetch(`/api/files?page=${pg}&limit=${PAGE}&type=${ctype}&search=${encodeURIComponent(csearch)}&${sortQS}`);
     if (_fetchGen !== myGen) return;
     if (r.status === 401) { location.href = '/login.html'; return; }
     const d = await r.json();
@@ -1625,6 +1676,7 @@ window.addEventListener('resize', () => {
     pool=[];
     loadQ=[]; loadActive=0;
     _positions = []; // force masonry recompute
+    _masonryColHeights = null;
     layout(); updateSpacer(); renderGrid();
   }, 200);
 });
@@ -1650,6 +1702,7 @@ function setLayout(mode) {
   });
   pool = []; loadQ = []; loadActive = 0;
   _positions = [];
+  _masonryColHeights = null;
   layout(); updateSpacer(); renderGrid();
 }
 
@@ -3631,9 +3684,46 @@ const previewObserver = new IntersectionObserver((entries) => {
       pool.forEach(p => { cancelLoadsForEl(p.el); clearCardVisuals(p.el); freeList.push(p.el); });
       pool = []; loadQ = []; loadActive = 0;
       _positions = [];
+      _masonryColHeights = null;
       layout(); updateSpacer(); renderGrid();
     }, 260);
   });
+})();
+
+// ─────────────────────────────────────────────────────────────
+//  SORT CONTROL  —  Random (default) / Newest / Oldest
+// ─────────────────────────────────────────────────────────────
+(function initSortControl() {
+  const sortSelEl = document.getElementById('sort-sel');
+  const shuffleEl = document.getElementById('sort-shuffle');
+  if (!sortSelEl) return;
+
+  function syncShuffleVisibility() {
+    if (shuffleEl) shuffleEl.style.display = (csort === 'random') ? '' : 'none';
+  }
+
+  // Sync UI to the single source of truth (csort) before any change events
+  // are attached. Fresh load → 'random', per genRandomSeed()/csort above.
+  sortSelEl.value = csort;
+  syncShuffleVisibility();
+
+  sortSelEl.addEventListener('change', () => {
+    const val = sortSelEl.value;
+    csort = (val === 'newest' || val === 'oldest') ? val : 'random';
+    if (csort === 'random') crandseed = genRandomSeed(); // fresh shuffle each time Random is (re-)entered
+    syncShuffleVisibility();
+    // Reuse the existing reset/reload mechanism — same path used by
+    // category/search changes, so virtual scroll + pagination reset correctly.
+    fetchPage(true);
+  });
+
+  if (shuffleEl) {
+    shuffleEl.addEventListener('click', () => {
+      if (csort !== 'random') return;
+      crandseed = genRandomSeed();
+      fetchPage(true);
+    });
+  }
 })();
 
 // ─────────────────────────────────────────────────────────────
