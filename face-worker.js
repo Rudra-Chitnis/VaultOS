@@ -28,6 +28,7 @@
  *   { type: 'resume'  }
  *   { type: 'cluster' }
  *   { type: 'rescan',  filename }
+ *   { type: 'reclassify_face', faceId }
  *   { type: 'get_status' }
  *   { type: 'shutdown' }
  *
@@ -37,6 +38,7 @@
  *   { type: 'progress', filename, faces, personIds }
  *   { type: 'error',    filename, message }
  *   { type: 'cluster_done', persons, facesAssigned }
+ *   { type: 'reclassify_done', faceId, personId }
  */
 
 const path    = require('path');
@@ -47,7 +49,7 @@ const { spawn } = require('child_process');
 
 const { FaceLogger }       = require('./face-logger');
 const dbModule             = require('./face-db');
-const { assignFace, fullReclusterPython, invalidateCentroidCache, blobToF32, f32ToBlob, cosineSim } =
+const { assignFace, fullReclusterPython, invalidateCentroidCache, blobToF32, f32ToBlob, cosineSim, withWriteLock } =
   require('./face-cluster');
 
 const log = new FaceLogger('WORKER');
@@ -759,7 +761,7 @@ async function drain() {
   draining = true;
   try {
     while (state === STATES.RUNNING && activeJobs < CONCURRENCY) {
-      const item = await dbModule.dequeueNext(db);
+      const item = await withWriteLock(() => dbModule.dequeueNext(db));
       if (!item) break;
 
       activeJobs++;
@@ -871,6 +873,17 @@ async function handleInit(msg) {
 
 async function startup() {
   await reconcileMediaDirectory();
+  // One-time repair of known-invalid persons/faces states (stale face_count,
+  // stale cover_face_id, empty persons) — idempotent, safe to run every
+  // startup. Runs before setState(RUNNING)/drain(), so nothing else is
+  // writing on this connection yet — no write-lock needed for this call.
+  // See face-db.js reconcilePersonsAndFaces() for exactly what it checks.
+  try {
+    const result = await dbModule.reconcilePersonsAndFaces(db);
+    log.info('Startup reconciliation complete', result);
+  } catch (e) {
+    log.error('Startup reconciliation failed (non-fatal)', { error: e.message });
+  }
   setState(STATES.RUNNING);
   send({ type: 'ready', state: STATES.RUNNING });
   drain().catch(e => log.error('Initial drain error', { error: e.message }));
@@ -913,10 +926,22 @@ async function handleRescan(msg) {
  *   2. Python reads embeddings from DB (read-only), runs HDBSCAN, returns assignments
  *   3. This worker writes the person rows + face assignments into SQLite (write lock)
  */
+/**
+ * Full HDBSCAN recluster via Python AI service HDBSCAN.
+ *
+ * Wrapped in the SAME withWriteLock used by assignFace() (see the doc
+ * comment on withWriteLock in face-cluster.js) — this is the only call site
+ * of fullReclusterPython(), and it does not itself run inside any other
+ * locked section, so this acquires the lock exactly once, never nested.
+ * A recluster requested mid-scan now waits for any in-flight assignFace()
+ * transaction to finish first, and any assignFace() calls that arrive while
+ * the recluster is running wait their turn behind it — the two transaction
+ * types can never overlap on this connection.
+ */
 async function handleCluster() {
   log.info('Full HDBSCAN recluster requested');
   try {
-    const result = await fullReclusterPython(db, dbPath, PYTHON_URL);
+    const result = await withWriteLock(() => fullReclusterPython(db, dbPath, PYTHON_URL));
     send({ type: 'cluster_done', persons: result.persons, facesAssigned: result.facesAssigned });
   } catch (err) {
     log.error('Full recluster failed', { error: err.message });
@@ -927,6 +952,46 @@ async function handleGetStatus() {
   if (!db) { send({ type: 'status', state }); return; }
   const counts = await dbModule.getIndexStatus(db);
   send({ type: 'status', state, ...counts });
+}
+
+/**
+ * Reconsider a single orphaned face (person_id IS NULL) after user feedback
+ * (e.g. "not this person") detached it from a cluster. Reuses the existing
+ * incremental assignFace() path — same centroid-matching logic used for
+ * newly-detected faces, which already respects the not_this_person blocklist
+ * (see getFeedbackBlocklistForFace in face-cluster.js's assignFace()) — so
+ * the face can be re-matched to some OTHER person, or spun into a new
+ * singleton person, but can never immediately return to the person it was
+ * just rejected from. assignFace() itself acquires the write-lock, so this
+ * safely queues behind any in-flight scan assignment or full recluster.
+ *
+ * Deliberately does NOT trigger a full recluster — this is the smallest safe
+ * mechanism that keeps the change scoped to the one affected face.
+ *
+ * Guarded on `db` existing and state not being pre-startup — reconciliation
+ * runs before setState(RUNNING), and while that's a narrow window unlikely
+ * to overlap a live user action, this guard makes it impossible regardless.
+ */
+async function handleReclassifyFace(msg) {
+  if (!db || !msg || !msg.faceId) return;
+  if (state === STATES.INITIALIZING || state === STATES.SERVICE_WAIT) {
+    log.debug('Reclassify: worker not ready yet, skipping', { faceId: msg.faceId });
+    return;
+  }
+  try {
+    const row = await db.get(
+      'SELECT embedding, person_id FROM faces WHERE id = ?', msg.faceId,
+    );
+    if (!row) { log.warn('Reclassify: face not found', { faceId: msg.faceId }); return; }
+    if (row.person_id) { log.debug('Reclassify: face already assigned, skipping', { faceId: msg.faceId }); return; }
+
+    const embedding = blobToF32(row.embedding);
+    const personId  = await assignFace(db, msg.faceId, embedding);
+    log.info('Reclassified orphaned face', { faceId: msg.faceId, personId });
+    send({ type: 'reclassify_done', faceId: msg.faceId, personId });
+  } catch (e) {
+    log.error('handleReclassifyFace error', { faceId: msg.faceId, error: e.message });
+  }
 }
 
 /**
@@ -983,6 +1048,7 @@ process.on('message', (msg) => {
     case 'resume':     handleResume().catch(e => log.error('handleResume',        { error: e.message })); break;
     case 'rescan':     handleRescan(msg).catch(e => log.error('handleRescan',     { error: e.message })); break;
     case 'cluster':    handleCluster().catch(e => log.error('handleCluster',      { error: e.message })); break;
+    case 'reclassify_face': handleReclassifyFace(msg).catch(e => log.error('handleReclassifyFace', { error: e.message })); break;
     case 'invalidate_cache': handleInvalidateCache().catch(e => log.error('handleInvalidateCache', { error: e.message })); break;
     case 'get_status': handleGetStatus().catch(e => log.error('handleGetStatus',  { error: e.message })); break;
     case 'shutdown':   handleShutdown().catch(e => { log.error('shutdown error', { error: e.message }); process.exit(1); }); break;

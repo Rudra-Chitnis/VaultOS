@@ -121,6 +121,44 @@ function invalidateCentroidCache() {
 }
 
 // ─────────────────────────────────────────────────────────────
+//  WRITE SERIALIZATION
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * The worker processes up to FACE_WORKER_CONCURRENCY files at once
+ * (face-worker.js drain() fires processQueueItem() calls without awaiting
+ * each other — default concurrency is 2), and each file's detected faces
+ * call assignFace() independently. A full recluster (fullReclusterPython)
+ * can also be triggered at any time via the 'cluster' IPC message. All of
+ * these share ONE sqlite connection (openDB() is called once per process).
+ *
+ * sqlite/sqlite3 do NOT understand a logical transaction that spans multiple
+ * awaited statements — two concurrent write-transactions can interleave
+ * their BEGIN calls on the same connection. Verified empirically: this
+ * throws "cannot start a transaction within a transaction" on the second
+ * BEGIN, and can silently break the FIRST transaction's later COMMIT too
+ * (its UPDATE appeared to succeed but never actually persisted once another
+ * BEGIN was interleaved before its COMMIT).
+ *
+ * This lock ensures only one write-transaction — an assignFace() call, a
+ * createPerson() call (itself only ever invoked from inside an assignFace()
+ * call, never directly), or a fullReclusterPython() call — runs at a time
+ * on this connection. A plain promise chain, no new dependency, and no
+ * second locking system: every place in this file (and face-worker.js) that
+ * needs this guarantee acquires THIS SAME lock, exactly once, around its
+ * complete transaction — never nested. It only protects THIS process's
+ * connection; it does not (and does not need to) protect against server.js's
+ * separate connection in the other process — that cross-process contention
+ * is already handled by the busy_timeout PRAGMA set in openDB().
+ */
+let _writeQueue = Promise.resolve();
+function withWriteLock(fn) {
+  const run = _writeQueue.then(fn, fn); // run after the prior one settles, even if it rejected
+  _writeQueue = run.catch(() => {});    // never let a rejection break the chain for the next caller
+  return run;
+}
+
+// ─────────────────────────────────────────────────────────────
 //  INCREMENTAL ASSIGNMENT  (unchanged from v1.x)
 // ─────────────────────────────────────────────────────────────
 
@@ -138,36 +176,52 @@ function invalidateCentroidCache() {
  * @returns {Promise<number>}  assigned person id
  */
 async function assignFace(db, faceId, embedding) {
-  const centroids = await getCentroids(db);
-  const blocklist = await db_module.getFeedbackBlocklistForFace(db, faceId);
+  // The whole decision + write runs under the write-lock (see withWriteLock
+  // doc comment above) — this also fixes a pre-existing race where two
+  // concurrent calls could both decide "no match, create new" against the
+  // same stale centroid snapshot and create two persons for one face cluster.
+  return withWriteLock(async () => {
+    const centroids = await getCentroids(db);
+    const blocklist = await db_module.getFeedbackBlocklistForFace(db, faceId);
 
-  let bestId = -1, bestSim = -Infinity, secondSim = -Infinity;
-  for (const [pid, centroid] of centroids) {
-    if (blocklist.has(pid)) continue;  // skip explicitly rejected persons
-    const sim = cosineSim(embedding, centroid);
-    if (sim > bestSim) { secondSim = bestSim; bestSim = sim; bestId = pid; }
-    else if (sim > secondSim) { secondSim = sim; }
-  }
-  const margin = bestSim - secondSim;
+    let bestId = -1, bestSim = -Infinity, secondSim = -Infinity;
+    for (const [pid, centroid] of centroids) {
+      if (blocklist.has(pid)) continue;  // skip explicitly rejected persons
+      const sim = cosineSim(embedding, centroid);
+      if (sim > bestSim) { secondSim = bestSim; bestSim = sim; bestId = pid; }
+      else if (sim > secondSim) { secondSim = sim; }
+    }
+    const margin = bestSim - secondSim;
 
-  log.debug('assignFace', {
-    faceId, personCount: centroids.size,
-    bestId, bestSim: bestId !== -1 ? bestSim.toFixed(4) : 'n/a',
-    margin: bestId !== -1 ? margin.toFixed(4) : 'n/a',
+    log.debug('assignFace', {
+      faceId, personCount: centroids.size,
+      bestId, bestSim: bestId !== -1 ? bestSim.toFixed(4) : 'n/a',
+      margin: bestId !== -1 ? margin.toFixed(4) : 'n/a',
+    });
+
+    if (bestId !== -1 && bestSim >= SIM_THRESHOLD &&
+        (centroids.size === 1 || margin >= MARGIN_THRESHOLD)) {
+      // Atomic: person_id write + centroid/face_count update + cover pick must
+      // land together — a crash between them previously could leave a face
+      // pointing at a person whose face_count/centroid was never incremented.
+      await db.run('BEGIN');
+      try {
+        await db_module.assignFaceToPerson(db, faceId, bestId);
+        await _updateCentroid(db, bestId, embedding, centroids);
+        await _maybeUpdateCoverFace(db, bestId, faceId);
+        await db.run('COMMIT');
+      } catch (e) {
+        try { await db.run('ROLLBACK'); } catch {}
+        throw e;
+      }
+      return bestId;
+    }
+
+    const personId = await db_module.createPerson(db, faceId, f32ToBlob(embedding));
+    centroids.set(personId, new Float32Array(embedding));
+    log.info('New person created', { personId, faceId, reason: bestId === -1 ? 'no_candidates' : bestSim < SIM_THRESHOLD ? 'below_threshold' : 'below_margin' });
+    return personId;
   });
-
-  if (bestId !== -1 && bestSim >= SIM_THRESHOLD &&
-      (centroids.size === 1 || margin >= MARGIN_THRESHOLD)) {
-    await db_module.assignFaceToPerson(db, faceId, bestId);
-    await _updateCentroid(db, bestId, embedding, centroids);
-    await _maybeUpdateCoverFace(db, bestId, faceId);
-    return bestId;
-  }
-
-  const personId = await db_module.createPerson(db, faceId, f32ToBlob(embedding));
-  centroids.set(personId, new Float32Array(embedding));
-  log.info('New person created', { personId, faceId, reason: bestId === -1 ? 'no_candidates' : bestSim < SIM_THRESHOLD ? 'below_threshold' : 'below_margin' });
-  return personId;
 }
 
 async function _updateCentroid(db, personId, newEmbedding, centroids) {
@@ -658,6 +712,10 @@ module.exports = {
   loadCentroidCache,
   invalidateCentroidCache,
   getCentroids,
+  // Write serialization (used here by assignFace; must also wrap
+  // fullReclusterPython at its call site in face-worker.js — see doc comment
+  // above withWriteLock for why both need the SAME lock)
+  withWriteLock,
   // Full recluster (HDBSCAN via Python)
   fullReclusterPython,
   // Post-recluster deduplication (comprehensive — used internally + exposed for manual call)

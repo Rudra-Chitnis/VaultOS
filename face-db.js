@@ -629,17 +629,32 @@ async function assignFaceToPerson(db, faceId, personId) {
 
 /**
  * Create a new person, assign the first face to it, return the person id.
+ * Atomic: the INSERT and the face's person_id UPDATE happen in one transaction
+ * so a crash between them can never leave a person row with no matching face,
+ * or a face pointing at a person_id whose INSERT never committed.
+ *
+ * NOTE: callers that already hold the worker's write-lock (see
+ * face-cluster.js withWriteLock) must call this directly — it does not
+ * acquire any lock itself, it only guarantees its own two statements commit
+ * or roll back together.
  */
 async function createPerson(db, faceId, centroidBlob) {
-  const now    = Date.now();
-  const result = await db.run(`
-    INSERT INTO persons (name, cover_face_id, face_count, centroid, created_at, updated_at)
-    VALUES (NULL, ?, 1, ?, ?, ?)
-  `, faceId, centroidBlob, now, now);
+  const now = Date.now();
+  await db.run('BEGIN');
+  try {
+    const result = await db.run(`
+      INSERT INTO persons (name, cover_face_id, face_count, centroid, created_at, updated_at)
+      VALUES (NULL, ?, 1, ?, ?, ?)
+    `, faceId, centroidBlob, now, now);
 
-  const personId = result.lastID;
-  await db.run('UPDATE faces SET person_id = ? WHERE id = ?', personId, faceId);
-  return personId;
+    const personId = result.lastID;
+    await db.run('UPDATE faces SET person_id = ? WHERE id = ?', personId, faceId);
+    await db.run('COMMIT');
+    return personId;
+  } catch (e) {
+    try { await db.run('ROLLBACK'); } catch {}
+    throw e;
+  }
 }
 
 async function updatePersonStats(db, personId, { centroidBlob, faceCount, coverFaceId } = {}) {
@@ -717,8 +732,20 @@ async function mergePersons(db, sourceId, targetId) {
 /**
  * Set a custom cover face for a person.
  * If locked=true the cover will survive incremental scans (but not full reclusters).
+ *
+ * Enforces persons.cover_face_id ⊆ "a face currently belonging to this person".
+ * Throws a clearly-named error (never a raw SQL failure) if faceId doesn't
+ * belong to personId — callers should catch this and respond appropriately
+ * (see server.js /api/faces/persons/:id/cover/by-media for an example).
  */
 async function setPersonCover(db, personId, faceId, locked = false) {
+  const face = await db.get('SELECT person_id FROM faces WHERE id = ?', faceId);
+  if (!face || face.person_id !== personId) {
+    const err = new Error('face_not_in_person');
+    err.code = 'FACE_NOT_IN_PERSON';
+    throw err;
+  }
+
   const now = Date.now();
   await db.run(
     'UPDATE persons SET cover_face_id = ?, locked_cover = ?, updated_at = ? WHERE id = ?',
@@ -1027,6 +1054,105 @@ async function* iterateFaceEmbeddings(db) {
   }
 }
 
+/**
+ * Repair known-invalid states in persons/faces. Safe to run repeatedly
+ * (idempotent) — every check re-derives truth from the faces table rather
+ * than trusting cached counters, and only touches rows that are provably
+ * wrong. Never touches face rows, names, locked-cover flags, or feedback
+ * history; only persons.face_count, persons.cover_face_id, and (as a last
+ * step) empty person rows themselves.
+ *
+ * Fixes, in this order:
+ *   1. persons.face_count that doesn't match the actual COUNT of faces
+ *      currently pointing at that person.
+ *   2. persons.cover_face_id that no longer references a face belonging to
+ *      that same person (the face was reassigned/rejected elsewhere without
+ *      the cover being re-picked — see recordNotThisPerson/removeFaceFromPerson).
+ *      Replaced with that person's highest-det_score remaining face, or NULL
+ *      if none remain.
+ *   3. Persons left with zero ACTUAL faces after the above (recalculated in
+ *      step 1, never trusted from the stale column) are removed. This mirrors
+ *      the precedent already set by mergePersons()/deletePerson(), which
+ *      already delete person rows once their faces move away — faces
+ *      themselves are never touched, only the now-meaningless person row.
+ *      A person that still owns even one face is never removed. Every
+ *      removed person's id/name is logged for auditability.
+ *
+ * Runs as a single transaction — either every fix in this pass commits
+ * together, or none do.
+ *
+ * Intended call site: once per face-worker startup (see startup() in
+ * face-worker.js), alongside the existing reconcileMediaDirectory() call —
+ * not on every request, and not as a periodic background job. Because it
+ * runs before setState(RUNNING)/drain() are reached, nothing else on this
+ * connection is writing concurrently, so it needs no write-lock of its own.
+ *
+ * @returns {Promise<{ faceCountFixed:number, coverFixed:number, emptyRemoved:number }>}
+ */
+async function reconcilePersonsAndFaces(db) {
+  const t0 = Date.now();
+  let faceCountFixed = 0, coverFixed = 0, emptyRemoved = 0;
+
+  await db.run('BEGIN');
+  try {
+    const persons = await db.all(
+      'SELECT id, name, face_count, cover_face_id FROM persons',
+    );
+
+    // 1. face_count must match actual COUNT(faces) for that person.
+    for (const p of persons) {
+      const crow = await db.get(
+        'SELECT COUNT(*) AS cnt FROM faces WHERE person_id = ?', p.id,
+      );
+      const actual = crow ? crow.cnt : 0;
+      if (actual !== p.face_count) {
+        await db.run(
+          'UPDATE persons SET face_count = ?, updated_at = ? WHERE id = ?',
+          actual, Date.now(), p.id,
+        );
+        faceCountFixed++;
+      }
+      p.face_count = actual; // keep in-memory copy accurate for steps 2-3
+    }
+
+    // 2. cover_face_id must be NULL or reference a face still owned by this person.
+    for (const p of persons) {
+      if (p.face_count === 0 || !p.cover_face_id) continue; // step 3 handles empties
+      const cover = await db.get('SELECT person_id FROM faces WHERE id = ?', p.cover_face_id);
+      const valid = cover && cover.person_id === p.id;
+      if (!valid) {
+        const best = await db.get(
+          'SELECT id FROM faces WHERE person_id = ? ORDER BY det_score DESC LIMIT 1', p.id,
+        );
+        await db.run(
+          'UPDATE persons SET cover_face_id = ?, updated_at = ? WHERE id = ?',
+          best ? best.id : null, Date.now(), p.id,
+        );
+        coverFixed++;
+      }
+    }
+
+    // 3. Remove persons left with zero ACTUAL faces (recomputed in step 1).
+    // Faces are never touched — only the now-meaningless person row.
+    const empties = persons.filter(p => p.face_count === 0);
+    for (const p of empties) {
+      await db.run('DELETE FROM persons WHERE id = ?', p.id);
+      emptyRemoved++;
+      log.info('Reconcile: removed empty person', { id: p.id, name: p.name || null });
+    }
+
+    await db.run('COMMIT');
+  } catch (e) {
+    try { await db.run('ROLLBACK'); } catch {}
+    throw e;
+  }
+
+  log.info('Reconcile persons/faces complete', {
+    faceCountFixed, coverFixed, emptyRemoved, ms: Date.now() - t0,
+  });
+  return { faceCountFixed, coverFixed, emptyRemoved };
+}
+
 // ─────────────────────────────────────────────────────────────
 //  EXPORTS
 // ─────────────────────────────────────────────────────────────
@@ -1072,4 +1198,6 @@ module.exports = {
   removeFaceFromPerson,
   addFaceToPersonManual,
   recordNotThisPerson,
+  // Existing-DB reconciliation (idempotent, conservative — see doc comment)
+  reconcilePersonsAndFaces,
 };

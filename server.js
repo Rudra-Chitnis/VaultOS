@@ -1041,9 +1041,18 @@ app.get('/api/faces/persons', auth, async (req, res) => {
   const db = getFaceDB();
   if (!db) return res.status(503).json({ error: 'face_db_unavailable' });
 
-  const page   = Math.max(0, parseInt(req.query.page)  || 0);
   const limit  = Math.min(80, Math.max(8, parseInt(req.query.limit) || 40));
   const search = (req.query.search || '').toLowerCase().trim();
+  // Pagination contract: the People grid's infinite scroll sends `offset`
+  // directly; `page` is kept for backward compatibility with any other
+  // caller. `offset` wins when both are present. Previously this route only
+  // read `page` (always 0, since the frontend never sends it), so `offset`
+  // was silently ignored and every "next page" re-fetched the same first
+  // `limit` persons.
+  const offset = req.query.offset !== undefined
+    ? Math.max(0, parseInt(req.query.offset) || 0)
+    : Math.max(0, parseInt(req.query.page) || 0) * limit;
+  const page = Math.floor(offset / limit);
 
   try {
     let total, items;
@@ -1064,10 +1073,10 @@ app.get('/api/faces/persons', auth, async (req, res) => {
           AND  (p.name IS NOT NULL AND LOWER(p.name) LIKE ?)
         ORDER  BY p.face_count DESC
         LIMIT  ? OFFSET ?
-      `, pattern, limit, page * limit);
+      `, pattern, limit, offset);
     } else {
       const { getPersons } = require('./face-db');
-      ({ items, total } = await getPersons(db, { limit, offset: page * limit }));
+      ({ items, total } = await getPersons(db, { limit, offset }));
     }
 
     res.json({
@@ -1079,7 +1088,7 @@ app.get('/api/faces/persons', auth, async (req, res) => {
       })),
       total,
       page,
-      hasMore: (page + 1) * limit < total,
+      hasMore: offset + limit < total,
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -1411,7 +1420,24 @@ app.put('/api/faces/persons/:id/cover/by-media', auth, async (req, res) => {
     }
 
     const { setPersonCover } = require('./face-db');
-    await setPersonCover(db, personId, face.id, true);
+    try {
+      await setPersonCover(db, personId, face.id, true);
+    } catch (e) {
+      // setPersonCover now enforces that a person's cover must be a face that
+      // actually belongs to it. The fallback above ("any face in this media")
+      // can pick a face belonging to someone else (or no one) when this
+      // person has no AI-matched face here — that was producing duplicate
+      // cover_face_id values across persons. Degrade to the same response
+      // already used when no face exists at all, rather than silently
+      // setting an unrelated face as this person's cover.
+      if (e.code === 'FACE_NOT_IN_PERSON') {
+        return res.status(404).json({
+          error: 'no_face_in_media',
+          message: 'No face belonging to this person was found in this media. Run a face scan first, or assign this face to the person, to enable cover selection.',
+        });
+      }
+      throw e;
+    }
     faceListCacheTs = 0;
     res.json({ ok: true });
   } catch (e) {
@@ -1533,6 +1559,11 @@ app.post('/api/faces/feedback/not-this-person', auth, async (req, res) => {
     await recordNotThisPerson(db, parseInt(faceId), parseInt(personId), rejectedCentroid);
     faceListCacheTs = 0;
     facePerFileCache.clear();
+    // Reconsider the now-orphaned face via the worker's existing incremental
+    // assignFace() path (respects the not_this_person blocklist we just wrote,
+    // so it can never immediately return to this same person). Deliberately
+    // NOT a full recluster — see face-worker.js handleReclassifyFace().
+    workerSend({ type: 'reclassify_face', faceId: parseInt(faceId) });
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
