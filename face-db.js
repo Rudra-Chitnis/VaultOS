@@ -16,7 +16,7 @@
  * All heavy indexing transactions stay in the worker; server writes are
  * infrequent (rename / merge / delete person).
  *
- * Schema version: 1
+ * Schema version: 5
  */
 
 const path  = require('path');
@@ -29,7 +29,7 @@ const log = new FaceLogger('DB');
 //  SCHEMA
 // ─────────────────────────────────────────────────────────────
 
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 /**
  * DDL executed on every open (IF NOT EXISTS guards make it idempotent).
@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS persons (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     name            TEXT,
     cover_face_id   INTEGER REFERENCES faces(id) ON DELETE SET NULL,
+    cover_media_filename TEXT,
     face_count      INTEGER NOT NULL DEFAULT 0,
     centroid        BLOB,
     locked_cover    INTEGER NOT NULL DEFAULT 0,
@@ -271,6 +272,16 @@ async function openDB(dbPath, options = {}) {
         log.info('Migration v3→v4: created media_cluster_manual table');
       }
 
+      // v4 → v5: media covers are distinct from face-thumbnail covers.
+      if (vrow.version < 5) {
+        try {
+          await db.run('ALTER TABLE persons ADD COLUMN cover_media_filename TEXT');
+          log.info('Migration v4→v5: added persons.cover_media_filename');
+        } catch (e) {
+          if (!e.message.includes('duplicate column')) throw e;
+        }
+      }
+
       await db.run('UPDATE schema_version SET version = ?', SCHEMA_VERSION);
       log.info('Schema migrated to version', SCHEMA_VERSION);
     }
@@ -298,6 +309,15 @@ async function openDB(dbPath, options = {}) {
         `);
         await db.run('UPDATE schema_version SET version = 4').catch(() => {});
         log.info('Server-mode migration: created media_cluster_manual (v4)');
+      }
+      if (sv && sv.version < 5) {
+        try {
+          await db.run('ALTER TABLE persons ADD COLUMN cover_media_filename TEXT');
+        } catch (e) {
+          if (!e.message.includes('duplicate column')) throw e;
+        }
+        await db.run('UPDATE schema_version SET version = 5').catch(() => {});
+        log.info('Server-mode migration: added persons.cover_media_filename (v5)');
       }
     } catch (sme) {
       log.warn('Server-mode migration check failed (non-fatal)', { error: sme.message });
@@ -427,8 +447,52 @@ async function getIndexedFaceBatch(db, filenames) {
   return map;
 }
 
-async function getPersons(db, { limit = 40, offset = 0 } = {}) {
-  const crow = await db.get('SELECT COUNT(*) AS cnt FROM persons WHERE face_count > 0');
+// Whitelisted sort modes for the People list. NEVER interpolate a raw
+// query-string value into SQL — this map is the only allowed source of
+// ORDER BY expressions. p.id ASC is appended as a deterministic tie-breaker
+// on every mode so pagination stays stable across pages.
+const PERSON_SORT_MAP = {
+  files_desc: 'media_count DESC, p.id ASC',
+  files_asc:  'media_count ASC, p.id ASC',
+  name_asc:   'display_name COLLATE NOCASE ASC, p.id ASC',
+  name_desc:  'display_name COLLATE NOCASE DESC, p.id ASC',
+  faces_desc: 'p.face_count DESC, p.id ASC',
+  faces_asc:  'p.face_count ASC, p.id ASC',
+};
+const PERSON_SORT_DEFAULT = 'files_desc';
+
+function resolvePersonSort(sort) {
+  return PERSON_SORT_MAP[sort] || PERSON_SORT_MAP[PERSON_SORT_DEFAULT];
+}
+
+// Shared media_count subquery: unique filenames associated with a person
+// through AI-detected faces UNION media_cluster_manual, deduplicated by
+// filename. Mirrors the exact semantics already used by getPersonMedia().
+const MEDIA_COUNT_SUBQUERY = `
+  (SELECT COUNT(*) FROM (
+     SELECT m.filename
+     FROM   media_index m
+     JOIN   faces f ON f.media_id = m.id
+     WHERE  f.person_id = p.id AND m.status = 'done'
+     UNION
+     SELECT mc.filename
+     FROM   media_cluster_manual mc
+     LEFT JOIN media_index m ON m.filename = mc.filename
+     WHERE  mc.person_id = p.id AND (m.id IS NULL OR m.status = 'done')
+   ))
+`;
+
+async function getPersons(db, { limit = 40, offset = 0, sort = PERSON_SORT_DEFAULT, search = '' } = {}) {
+  const orderBy = resolvePersonSort(sort);
+  const searchTerm = (search || '').toLowerCase().trim();
+  const whereSearch = searchTerm ? `AND (p.name IS NOT NULL AND LOWER(p.name) LIKE ?)` : '';
+  const params = searchTerm ? [`%${searchTerm}%`] : [];
+
+  const crow = await db.get(`
+    SELECT COUNT(*) AS cnt FROM persons p
+    WHERE  (p.face_count > 0 OR EXISTS (SELECT 1 FROM media_cluster_manual mc WHERE mc.person_id = p.id))
+    ${whereSearch}
+  `, ...params);
   const total = crow ? crow.cnt : 0;
 
   const items = await db.all(`
@@ -436,13 +500,17 @@ async function getPersons(db, { limit = 40, offset = 0 } = {}) {
            p.name,
            p.face_count,
            p.cover_face_id,
-           f.thumb_path AS cover_thumb
+           p.cover_media_filename,
+           f.thumb_path AS cover_thumb,
+           COALESCE(p.name, 'Person ' || p.id) AS display_name,
+           ${MEDIA_COUNT_SUBQUERY} AS media_count
     FROM   persons p
     LEFT JOIN faces f ON f.id = p.cover_face_id
-    WHERE  p.face_count > 0
-    ORDER  BY p.face_count DESC
+    WHERE  (p.face_count > 0 OR EXISTS (SELECT 1 FROM media_cluster_manual mc WHERE mc.person_id = p.id))
+    ${whereSearch}
+    ORDER  BY ${orderBy}
     LIMIT  ? OFFSET ?
-  `, limit, offset);
+  `, ...params, limit, offset);
 
   return { items, total };
 }
@@ -543,7 +611,7 @@ async function getIndexStatus(db) {
       db.get("SELECT COUNT(*) AS cnt FROM media_index WHERE status='error'"),
       db.get("SELECT COUNT(*) AS cnt FROM scan_queue  WHERE status='queued'"),
       db.get("SELECT COUNT(*) AS cnt FROM scan_queue  WHERE status='processing'"),
-      db.get('SELECT COUNT(*) AS cnt FROM persons WHERE face_count > 0'),
+      db.get('SELECT COUNT(*) AS cnt FROM persons WHERE face_count > 0 OR EXISTS (SELECT 1 FROM media_cluster_manual mc WHERE mc.person_id = persons.id)'),
       db.get('SELECT COUNT(*) AS cnt FROM faces'),
     ]);
   return {
@@ -689,6 +757,17 @@ async function renamePerson(db, personId, name) {
 async function mergePersons(db, sourceId, targetId) {
   await db.run('BEGIN');
   try {
+    const [source, target] = await Promise.all([
+      db.get('SELECT cover_face_id, cover_media_filename, locked_cover FROM persons WHERE id = ?', sourceId),
+      db.get('SELECT cover_face_id, cover_media_filename, locked_cover FROM persons WHERE id = ?', targetId),
+    ]);
+    if (!source || !target) throw new Error('person_not_found');
+
+    // Copy first: deleting source cascades its manual associations.
+    await db.run(`
+      INSERT OR IGNORE INTO media_cluster_manual (filename, person_id, created_at)
+      SELECT filename, ?, created_at FROM media_cluster_manual WHERE person_id = ?
+    `, targetId, sourceId);
     const res = await db.run(
       'UPDATE faces SET person_id = ? WHERE person_id = ?',
       targetId, sourceId,
@@ -707,9 +786,15 @@ async function mergePersons(db, sourceId, targetId) {
     );
 
     // Pick best cover: respect locked_cover on target, otherwise choose highest det_score face
-    const target = await db.get('SELECT locked_cover FROM persons WHERE id = ?', targetId);
     let newCoverId = null;
-    if (!target || !target.locked_cover) {
+    let newCoverMedia = null;
+    let lockedCover = target.locked_cover;
+    if (!target.locked_cover && source.locked_cover) {
+      // A locked source cover wins only when the target has no locked choice.
+      newCoverId = source.cover_face_id;
+      newCoverMedia = source.cover_media_filename;
+      lockedCover = 1;
+    } else if (!target.locked_cover) {
       const bestFace = await db.get(
         'SELECT id FROM faces WHERE person_id = ? ORDER BY det_score DESC LIMIT 1', targetId,
       );
@@ -717,8 +802,17 @@ async function mergePersons(db, sourceId, targetId) {
     }
 
     await db.run(
-      'UPDATE persons SET face_count = ?, cover_face_id = COALESCE(?, cover_face_id), updated_at = ? WHERE id = ?',
-      faceCount, newCoverId, Date.now(), targetId,
+      `UPDATE persons
+       SET face_count = ?,
+           cover_face_id = CASE WHEN ? THEN ? WHEN ? IS NOT NULL THEN ? ELSE cover_face_id END,
+           cover_media_filename = CASE WHEN ? THEN ? WHEN ? IS NOT NULL THEN NULL ELSE cover_media_filename END,
+           locked_cover = ?, updated_at = ? WHERE id = ?`,
+      faceCount,
+      !target.locked_cover && source.locked_cover, newCoverId,
+      newCoverId, newCoverId,
+      !target.locked_cover && source.locked_cover, newCoverMedia,
+      newCoverId,
+      lockedCover, Date.now(), targetId,
     );
     await db.run('DELETE FROM persons WHERE id = ?', sourceId);
     await db.run('COMMIT');
@@ -748,7 +842,7 @@ async function setPersonCover(db, personId, faceId, locked = false) {
 
   const now = Date.now();
   await db.run(
-    'UPDATE persons SET cover_face_id = ?, locked_cover = ?, updated_at = ? WHERE id = ?',
+    'UPDATE persons SET cover_face_id = ?, cover_media_filename = NULL, locked_cover = ?, updated_at = ? WHERE id = ?',
     faceId, locked ? 1 : 0, now, personId,
   );
   // Record in feedback so we can re-apply after a full recluster if needed
@@ -762,6 +856,28 @@ async function setPersonCover(db, personId, faceId, locked = false) {
       faceId, personId, now,
     );
   }
+}
+
+/** Set a whole-media cover. The caller validates physical media existence. */
+async function setPersonMediaCover(db, personId, filename, locked = false) {
+  const associated = await db.get(`
+    SELECT 1
+    WHERE EXISTS (
+      SELECT 1 FROM faces f JOIN media_index m ON m.id = f.media_id
+      WHERE f.person_id = ? AND m.filename = ?
+    ) OR EXISTS (
+      SELECT 1 FROM media_cluster_manual WHERE person_id = ? AND filename = ?
+    )
+  `, personId, filename, personId, filename);
+  if (!associated) {
+    const err = new Error('media_not_in_person');
+    err.code = 'MEDIA_NOT_IN_PERSON';
+    throw err;
+  }
+  await db.run(
+    'UPDATE persons SET cover_media_filename = ?, cover_face_id = NULL, locked_cover = ?, updated_at = ? WHERE id = ?',
+    filename, locked ? 1 : 0, Date.now(), personId,
+  );
 }
 
 /**
@@ -1017,10 +1133,31 @@ async function addMediaToCluster(db, filename, personId) {
  * Remove a manual media → cluster association.
  */
 async function removeMediaFromCluster(db, filename, personId) {
-  await db.run(
-    `DELETE FROM media_cluster_manual WHERE filename = ? AND person_id = ?`,
-    filename, personId,
-  );
+  await db.run('BEGIN');
+  try {
+    await db.run(
+      `DELETE FROM media_cluster_manual WHERE filename = ? AND person_id = ?`,
+      filename, personId,
+    );
+    // The same file may still be valid through an AI face association.
+    await db.run(`
+      UPDATE persons
+      SET cover_media_filename = NULL, updated_at = ?
+      WHERE id = ? AND cover_media_filename = ?
+        AND NOT EXISTS (
+          SELECT 1 FROM faces f JOIN media_index m ON m.id = f.media_id
+          WHERE f.person_id = ? AND m.filename = ?
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM media_cluster_manual
+          WHERE person_id = ? AND filename = ?
+        )
+    `, Date.now(), personId, filename, personId, filename, personId, filename);
+    await db.run('COMMIT');
+  } catch (e) {
+    try { await db.run('ROLLBACK'); } catch {}
+    throw e;
+  }
 }
 
 /**
@@ -1059,7 +1196,7 @@ async function* iterateFaceEmbeddings(db) {
  * (idempotent) — every check re-derives truth from the faces table rather
  * than trusting cached counters, and only touches rows that are provably
  * wrong. Never touches face rows, names, locked-cover flags, or feedback
- * history; only persons.face_count, persons.cover_face_id, and (as a last
+ * history; only persons.face_count, cover fields, and (as a last
  * step) empty person rows themselves.
  *
  * Fixes, in this order:
@@ -1070,12 +1207,8 @@ async function* iterateFaceEmbeddings(db) {
  *      the cover being re-picked — see recordNotThisPerson/removeFaceFromPerson).
  *      Replaced with that person's highest-det_score remaining face, or NULL
  *      if none remain.
- *   3. Persons left with zero ACTUAL faces after the above (recalculated in
- *      step 1, never trusted from the stale column) are removed. This mirrors
- *      the precedent already set by mergePersons()/deletePerson(), which
- *      already delete person rows once their faces move away — faces
- *      themselves are never touched, only the now-meaningless person row.
- *      A person that still owns even one face is never removed. Every
+ *   3. cover_media_filename must still be associated with the person.
+ *   4. Persons with neither faces nor manual associations are removed. Every
  *      removed person's id/name is logged for auditability.
  *
  * Runs as a single transaction — either every fix in this pass commits
@@ -1089,14 +1222,14 @@ async function* iterateFaceEmbeddings(db) {
  *
  * @returns {Promise<{ faceCountFixed:number, coverFixed:number, emptyRemoved:number }>}
  */
-async function reconcilePersonsAndFaces(db) {
+async function reconcilePersonsAndFaces(db, existingFilenames = null) {
   const t0 = Date.now();
   let faceCountFixed = 0, coverFixed = 0, emptyRemoved = 0;
 
   await db.run('BEGIN');
   try {
     const persons = await db.all(
-      'SELECT id, name, face_count, cover_face_id FROM persons',
+      'SELECT id, name, face_count, cover_face_id, cover_media_filename FROM persons',
     );
 
     // 1. face_count must match actual COUNT(faces) for that person.
@@ -1115,13 +1248,14 @@ async function reconcilePersonsAndFaces(db) {
       p.face_count = actual; // keep in-memory copy accurate for steps 2-3
     }
 
-    // 2. cover_face_id must be NULL or reference a face still owned by this person.
+    // 2. A face cover must remain owned by this person. Media covers take
+    // precedence over automatic face replacement and stay mutually exclusive.
     for (const p of persons) {
-      if (p.face_count === 0 || !p.cover_face_id) continue; // step 3 handles empties
+      if (!p.cover_face_id) continue;
       const cover = await db.get('SELECT person_id FROM faces WHERE id = ?', p.cover_face_id);
       const valid = cover && cover.person_id === p.id;
       if (!valid) {
-        const best = await db.get(
+        const best = p.cover_media_filename ? null : await db.get(
           'SELECT id FROM faces WHERE person_id = ? ORDER BY det_score DESC LIMIT 1', p.id,
         );
         await db.run(
@@ -1132,9 +1266,39 @@ async function reconcilePersonsAndFaces(db) {
       }
     }
 
-    // 3. Remove persons left with zero ACTUAL faces (recomputed in step 1).
-    // Faces are never touched — only the now-meaningless person row.
-    const empties = persons.filter(p => p.face_count === 0);
+    // 3. A media cover must still be associated by a face or manual assignment.
+    for (const p of persons) {
+      if (!p.cover_media_filename) continue;
+      const valid = await db.get(`
+        SELECT 1
+        WHERE EXISTS (
+          SELECT 1 FROM faces f JOIN media_index m ON m.id = f.media_id
+          WHERE f.person_id = ? AND m.filename = ?
+        ) OR EXISTS (
+          SELECT 1 FROM media_cluster_manual WHERE person_id = ? AND filename = ?
+        )
+      `, p.id, p.cover_media_filename, p.id, p.cover_media_filename);
+      if (!valid || (existingFilenames && !existingFilenames.has(p.cover_media_filename))) {
+        await db.run(
+          'UPDATE persons SET cover_media_filename = NULL, updated_at = ? WHERE id = ?',
+          Date.now(), p.id,
+        );
+        coverFixed++;
+      } else if (p.cover_face_id) {
+        await db.run(
+          'UPDATE persons SET cover_face_id = NULL, updated_at = ? WHERE id = ?', Date.now(), p.id,
+        );
+        coverFixed++;
+      }
+    }
+
+    // 4. Manual-only persons are meaningful and must survive.
+    const empties = [];
+    for (const p of persons) {
+      if (p.face_count > 0) continue;
+      const manual = await db.get('SELECT 1 FROM media_cluster_manual WHERE person_id = ? LIMIT 1', p.id);
+      if (!manual) empties.push(p);
+    }
     for (const p of empties) {
       await db.run('DELETE FROM persons WHERE id = ?', p.id);
       emptyRemoved++;
@@ -1169,6 +1333,8 @@ module.exports = {
   // Read (server-safe)
   getIndexedFaceBatch,
   getPersons,
+  PERSON_SORT_MAP,
+  PERSON_SORT_DEFAULT,
   getPersonMedia,
   getMediaFaces,
   getIndexStatus,
@@ -1195,6 +1361,7 @@ module.exports = {
   removeMediaFromCluster,
   // User corrections (server-safe)
   setPersonCover,
+  setPersonMediaCover,
   removeFaceFromPerson,
   addFaceToPersonManual,
   recordNotThisPerson,

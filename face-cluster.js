@@ -337,22 +337,25 @@ async function fullReclusterPython(db, dbPath, pythonUrl) {
   const t = log.timer('Python HDBSCAN recluster');
   log.info('Requesting HDBSCAN recluster from Python service', { dbPath, pythonUrl });
 
-  // ── 0. Snapshot existing names and locked covers BEFORE wiping ─────────────
-  // Strategy: map each named person's cover_face_id → { name, locked_cover }
-  // After rebuild, find which new person inherited that face and re-apply the name.
-  const namedSnapshot = await db.all(`
-    SELECT p.name, p.locked_cover, p.cover_face_id AS best_face_id
-    FROM   persons p
-    WHERE  p.name IS NOT NULL AND p.cover_face_id IS NOT NULL
+  // ── 0. Snapshot person identity/manual state BEFORE wiping ───────────────
+  // Person IDs and face IDs must not be assumed stable across a rebuild.
+  // A surviving face is the existing stable bridge to its rebuilt person;
+  // manual-only persons have no such bridge and are explicitly re-created.
+  const personSnapshots = await db.all(`
+    SELECT p.id, p.name, p.locked_cover, p.cover_face_id, p.cover_media_filename,
+           COALESCE(p.cover_face_id, (
+             SELECT f.id FROM faces f WHERE f.person_id = p.id
+             ORDER BY f.det_score DESC LIMIT 1
+           )) AS best_face_id
+    FROM persons p
   `);
-  // Also capture locked covers without names (to re-lock them)
-  const lockedCovers = await db.all(`
-    SELECT p.cover_face_id AS face_id
-    FROM   persons p
-    WHERE  p.locked_cover = 1 AND p.cover_face_id IS NOT NULL
-  `);
+  const manualSnapshots = await db.all(
+    'SELECT filename, person_id, created_at FROM media_cluster_manual',
+  );
+  const namedSnapshot = personSnapshots.filter(p => p.name && p.best_face_id);
+  const lockedCovers = personSnapshots.filter(p => p.locked_cover && p.best_face_id);
   // face_feedback rows survive the wipe (they have ON DELETE CASCADE only for faces rows)
-  log.info('Snapshot', { named: namedSnapshot.length, locked: lockedCovers.length });
+  log.info('Snapshot', { persons: personSnapshots.length, manual: manualSnapshots.length, named: namedSnapshot.length, locked: lockedCovers.length });
 
   // ── 1. Call Python /cluster endpoint ─────────────────────────────────────
   let pyResult;
@@ -437,24 +440,80 @@ async function fullReclusterPython(db, dbPath, pythonUrl) {
     throw e;
   }
 
-  // ── 3. Re-apply names: find which new person inherited each old best-face ──
-  // Each named person's cover_face_id now belongs to some new person.
-  // We look up that face's new person_id and apply the name (first-wins, no override).
-  if (namedSnapshot.length > 0) {
-    const applied = { names: 0 };
-    for (const snap of namedSnapshot) {
-      try {
-        const faceRow = await db.get('SELECT person_id FROM faces WHERE id = ?', snap.best_face_id);
-        if (!faceRow || !faceRow.person_id) continue;
-        const newPid = faceRow.person_id;
-        // Don't overwrite a name that was already re-applied by an earlier snap
-        const existing = await db.get('SELECT name FROM persons WHERE id = ?', newPid);
-        if (!existing || existing.name) continue; // already has a name — skip
-        await db.run('UPDATE persons SET name = ?, updated_at = ? WHERE id = ?', snap.name, Date.now(), newPid);
-        applied.names++;
-      } catch {}
+  // ── 3. Restore manual associations, names, and locked covers ─────────────
+  // DELETE persons cascades media_cluster_manual, so restore it explicitly.
+  // Faces map old persons to rebuilt persons; rows with no surviving face are
+  // valid manual-only people and receive a new person row.
+  const oldToNew = new Map();
+  for (const snap of personSnapshots) {
+    if (!snap.best_face_id) continue;
+    const faceRow = await db.get('SELECT person_id FROM faces WHERE id = ?', snap.best_face_id);
+    if (faceRow && faceRow.person_id) oldToNew.set(snap.id, faceRow.person_id);
+  }
+
+  await db.run('BEGIN');
+  try {
+    const now = Date.now();
+    for (const snap of personSnapshots) {
+      if (oldToNew.has(snap.id)) continue;
+      if (!manualSnapshots.some(m => m.person_id === snap.id)) continue;
+      const result = await db.run(
+        `INSERT INTO persons (name, cover_media_filename, locked_cover, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?)`,
+        snap.name || null, snap.cover_media_filename || null, snap.locked_cover ? 1 : 0, now, now,
+      );
+      oldToNew.set(snap.id, result.lastID);
     }
-    log.info('Name re-application', applied);
+
+    for (const manual of manualSnapshots) {
+      const personId = oldToNew.get(manual.person_id);
+      if (!personId) continue;
+      await db.run(
+        'INSERT OR IGNORE INTO media_cluster_manual (filename, person_id, created_at) VALUES (?, ?, ?)',
+        manual.filename, personId, manual.created_at,
+      );
+    }
+
+    let names = 0, covers = 0;
+    for (const snap of personSnapshots) {
+      const personId = oldToNew.get(snap.id);
+      if (!personId) continue;
+      const current = await db.get('SELECT name FROM persons WHERE id = ?', personId);
+      if (snap.name && current && !current.name) {
+        await db.run('UPDATE persons SET name = ?, updated_at = ? WHERE id = ?', snap.name, now, personId);
+        names++;
+      }
+      if (!snap.locked_cover) continue;
+      const mediaValid = snap.cover_media_filename && await db.get(`
+        SELECT 1 WHERE EXISTS (
+          SELECT 1 FROM faces f JOIN media_index m ON m.id = f.media_id
+          WHERE f.person_id = ? AND m.filename = ?
+        ) OR EXISTS (
+          SELECT 1 FROM media_cluster_manual WHERE person_id = ? AND filename = ?
+        )
+      `, personId, snap.cover_media_filename, personId, snap.cover_media_filename);
+      if (mediaValid) {
+        await db.run(
+          'UPDATE persons SET cover_media_filename = ?, cover_face_id = NULL, locked_cover = 1, updated_at = ? WHERE id = ?',
+          snap.cover_media_filename, now, personId,
+        );
+        covers++;
+      } else if (snap.cover_face_id) {
+        const faceValid = await db.get('SELECT 1 FROM faces WHERE id = ? AND person_id = ?', snap.cover_face_id, personId);
+        if (faceValid) {
+          await db.run(
+            'UPDATE persons SET cover_face_id = ?, cover_media_filename = NULL, locked_cover = 1, updated_at = ? WHERE id = ?',
+            snap.cover_face_id, now, personId,
+          );
+          covers++;
+        }
+      }
+    }
+    await db.run('COMMIT');
+    log.info('Person state re-application', { names, covers, manual: manualSnapshots.length });
+  } catch (e) {
+    try { await db.run('ROLLBACK'); } catch {}
+    throw e;
   }
 
   // ── 4. Re-apply not-me feedback ───────────────────────────────────────────

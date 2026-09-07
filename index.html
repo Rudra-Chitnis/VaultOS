@@ -413,6 +413,9 @@ body::before{content:'';position:fixed;inset:0;
 /* ── Person detail — action bar ── */
 #pd-actions{display:none;gap:5px;align-items:center;flex-shrink:0}
 #pd-actions.on{display:flex}
+/* People-page sort control — visible in list view, hidden in person detail view */
+#pp-sort-wrap{display:flex}
+#pp-sort-wrap.off{display:none}
 .pd-btn{padding:4px 11px;background:none;border:1px solid var(--br2);border-radius:6px;color:var(--t3);font-size:10px;font-family:'IBM Plex Mono',monospace;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
 .pd-btn:hover{border-color:var(--r);color:var(--r)}
 .pd-btn.active{border-color:#2ecc71;color:#2ecc71}
@@ -842,6 +845,18 @@ body.rail-collapsed #main{margin-left:var(--rail-c)}
     <div id="pph">
       <button id="ppback">← Back</button>
       <div id="pptitle">People</div>
+      <!-- People-list sort control — visible only in the list view, not person detail -->
+      <div class="sort-wrap" id="pp-sort-wrap">
+        <label for="pp-sort-sel">Sort</label>
+        <select id="pp-sort-sel" class="sort-sel" title="Change People sort order">
+          <option value="files_desc">Files high → low</option>
+          <option value="files_asc">Files low → high</option>
+          <option value="name_asc">Name A → Z</option>
+          <option value="name_desc">Name Z → A</option>
+          <option value="faces_desc">Faces high → low</option>
+          <option value="faces_asc">Faces low → high</option>
+        </select>
+      </div>
       <!-- Action bar — visible only in person detail view -->
       <div id="pd-actions">
         <button class="pd-btn" id="pd-rename">✎ Rename</button>
@@ -2339,6 +2354,7 @@ function showPeopleView() {
   // Reset detail state
   pdPersonId = null; _curPerson = null;
   if (typeof pdActEl !== 'undefined') pdActEl.classList.remove('on');
+  if (ppSortWrapEl) ppSortWrapEl.classList.remove('off');
   // Immediately show fresh status then load grid (or filtered grid if search active)
   const _initQ = srchEl.value.trim();
   pollFaceStatus().then(() => _initQ ? loadPeopleFiltered(_initQ) : loadPeople());
@@ -2369,6 +2385,7 @@ function navigateToPerson(p) {
     document.getElementById('pptitle').textContent = 'People';
     pdPersonId = null; _curPerson = null;
     if (typeof pdActEl !== 'undefined') pdActEl.classList.remove('on');
+    if (ppSortWrapEl) ppSortWrapEl.classList.remove('off');
     ppgridEl.innerHTML = '';
     ppemptyEl.style.display = 'none';
   }
@@ -2396,15 +2413,30 @@ let ppLoading    = false;
 let ppMore       = true;
 let ppPage       = 0;
 let ppPersonId   = null;  // null = list view; number = person detail
+let ppsort       = 'files_desc'; // People list sort mode — default matches server default
 
 // Currently open person (detail view)
 let _curPerson   = null;  // { id, name, faceCount, coverThumb }
 
-const ppgridEl  = document.getElementById('pggrid');
-const ppspEl    = document.getElementById('ppsp');
-const ppemptyEl = document.getElementById('ppempty');
-const ppbodyEl  = document.getElementById('ppbody');
-const pdActEl   = document.getElementById('pd-actions');
+const ppgridEl    = document.getElementById('pggrid');
+const ppspEl      = document.getElementById('ppsp');
+const ppemptyEl   = document.getElementById('ppempty');
+const ppbodyEl    = document.getElementById('ppbody');
+const pdActEl     = document.getElementById('pd-actions');
+const ppSortWrapEl = document.getElementById('pp-sort-wrap');
+const ppSortSelEl  = document.getElementById('pp-sort-sel');
+
+// Sort change: reset pagination, clear the grid, reload page 0 with the new
+// sort — for whichever mode (plain list or filtered search) is active.
+if (ppSortSelEl) {
+  ppSortSelEl.value = ppsort;
+  ppSortSelEl.addEventListener('change', () => {
+    ppsort = ppSortSelEl.value;
+    const q = srchEl.value.trim();
+    if (q) loadPeopleFiltered(q);
+    else    loadPeople(true);
+  });
+}
 
 // ── People list ──────────────────────────────────────────────
 
@@ -2422,7 +2454,8 @@ async function loadPeople(reset = true) {
 
   try {
     const offset = ppPage * 60;
-    const r = await fetch(`/api/faces/persons?limit=60&offset=${offset}`);
+    const q = srchEl.value.trim();
+    const r = await fetch(`/api/faces/persons?limit=60&offset=${offset}&search=${encodeURIComponent(q)}&sort=${encodeURIComponent(ppsort)}`);
     if (r.status === 401) { location.href = '/login.html'; return; }
     const d = await r.json();
 
@@ -2451,7 +2484,7 @@ async function loadPeopleFiltered(q) {
   ppPage = 0; ppMore = true;
   ppgridEl.innerHTML = '';
   try {
-    const r = await fetch(`/api/faces/persons?limit=60&offset=0&search=${encodeURIComponent(q)}`);
+    const r = await fetch(`/api/faces/persons?limit=60&offset=0&search=${encodeURIComponent(q)}&sort=${encodeURIComponent(ppsort)}`);
     if (r.status === 401) { location.href = '/login.html'; return; }
     const d = await r.json();
     ppMore = 60 < d.total; ppPage = 1;
@@ -2478,6 +2511,10 @@ function renderPersonCard(person) {
   card.className = 'pgc';
   const displayName = person.name || `Person ${person.id}`;
   const thumb = person.coverThumb || null;
+  // Primary count is media files (AI-detected + manually assigned, deduped) —
+  // NOT the raw AI face_count. Face count remains available as secondary info.
+  const mediaCount = person.mediaCount ?? person.media_count ?? 0;
+  const faceCount  = person.faceCount  ?? person.face_count  ?? 0;
 
   card.innerHTML =
     `<div class="pgav">${
@@ -2486,7 +2523,7 @@ function renderPersonCard(person) {
         : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>`
     }</div>` +
     `<div class="pgn" title="${displayName}">${displayName}</div>` +
-    `<div class="pgct">${person.faceCount || person.face_count || 0} face${(person.faceCount || person.face_count || 0) === 1 ? '' : 's'}</div>` +
+    `<div class="pgct">${mediaCount} file${mediaCount === 1 ? '' : 's'} · ${faceCount} face${faceCount === 1 ? '' : 's'}</div>` +
     // ⋮ context button
     `<button class="pg-menu-btn" title="Options" tabindex="-1">⋮</button>` +
     // Dropdown context menu
@@ -2573,6 +2610,7 @@ async function openPersonDetail(personOrId, legacyName) {
   document.getElementById('ppback').classList.add('on');
   document.getElementById('pptitle').textContent = displayName;
   pdActEl.classList.add('on');
+  if (ppSortWrapEl) ppSortWrapEl.classList.add('off');
   ppbodyEl.scrollTop = 0;
 
   // Push history state so browser Back button works (Task 4)
@@ -2752,6 +2790,7 @@ function goBackToPeopleList() {
   document.getElementById('ppback').classList.remove('on');
   document.getElementById('pptitle').textContent = 'People';
   pdActEl.classList.remove('on');
+  if (ppSortWrapEl) ppSortWrapEl.classList.remove('off');
   // Reset search to people mode
   srchEl.placeholder = 'Search people…';
   // If search was active while in person detail, clear it and reload full list
@@ -2953,6 +2992,7 @@ mergeOkBtn.addEventListener('click', async () => {
       document.getElementById('ppback').classList.remove('on');
       document.getElementById('pptitle').textContent = 'People';
       pdActEl.classList.remove('on');
+      if (ppSortWrapEl) ppSortWrapEl.classList.remove('off');
       loadPeople(true);
     } else {
       showToast(d.error || 'Merge failed', 'err');
@@ -2980,6 +3020,7 @@ async function confirmDeletePerson(personId, displayName, cardEl, fromDetail = f
         document.getElementById('ppback').classList.remove('on');
         document.getElementById('pptitle').textContent = 'People';
         pdActEl.classList.remove('on');
+        if (ppSortWrapEl) ppSortWrapEl.classList.remove('off');
         loadPeople(true);
       }
     } else {

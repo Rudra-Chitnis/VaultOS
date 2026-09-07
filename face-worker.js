@@ -825,6 +825,7 @@ async function reconcileMediaDirectory() {
 
   t.end({ new: newCount, changed: changedCount, deleted: deletedCount });
   log.info('Reconcile complete', { new: newCount, changed: changedCount });
+  return fileSet;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -872,14 +873,14 @@ async function handleInit(msg) {
 }
 
 async function startup() {
-  await reconcileMediaDirectory();
+  const existingFilenames = await reconcileMediaDirectory();
   // One-time repair of known-invalid persons/faces states (stale face_count,
   // stale cover_face_id, empty persons) — idempotent, safe to run every
   // startup. Runs before setState(RUNNING)/drain(), so nothing else is
   // writing on this connection yet — no write-lock needed for this call.
   // See face-db.js reconcilePersonsAndFaces() for exactly what it checks.
   try {
-    const result = await dbModule.reconcilePersonsAndFaces(db);
+    const result = await dbModule.reconcilePersonsAndFaces(db, existingFilenames);
     log.info('Startup reconciliation complete', result);
   } catch (e) {
     log.error('Startup reconciliation failed (non-fatal)', { error: e.message });

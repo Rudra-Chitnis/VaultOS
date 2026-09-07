@@ -1036,13 +1036,20 @@ app.get('/api/faces/status', auth, async (req, res) => {
   }
 });
 
-// GET /api/faces/persons?page=0&limit=40&search=name
+// GET /api/faces/persons?page=0&limit=40&search=name&sort=files_desc
 app.get('/api/faces/persons', auth, async (req, res) => {
   const db = getFaceDB();
   if (!db) return res.status(503).json({ error: 'face_db_unavailable' });
 
+  const { PERSON_SORT_MAP, PERSON_SORT_DEFAULT, getPersons } = require('./face-db');
+
   const limit  = Math.min(80, Math.max(8, parseInt(req.query.limit) || 40));
   const search = (req.query.search || '').toLowerCase().trim();
+  // Sort is validated against a fixed whitelist — never pass req.query.sort
+  // into SQL directly. Unknown/missing values fall back to the default.
+  const sort = Object.prototype.hasOwnProperty.call(PERSON_SORT_MAP, req.query.sort)
+    ? req.query.sort
+    : PERSON_SORT_DEFAULT;
   // Pagination contract: the People grid's infinite scroll sends `offset`
   // directly; `page` is kept for backward compatibility with any other
   // caller. `offset` wins when both are present. Previously this route only
@@ -1055,36 +1062,19 @@ app.get('/api/faces/persons', auth, async (req, res) => {
   const page = Math.floor(offset / limit);
 
   try {
-    let total, items;
-    if (search) {
-      // Name-filtered query — searches person names (NULL names use "Person {id}")
-      const pattern = `%${search}%`;
-      const crow = await db.get(`
-        SELECT COUNT(*) AS cnt FROM persons
-        WHERE face_count > 0
-          AND (name IS NOT NULL AND LOWER(name) LIKE ?)
-      `, pattern);
-      total = crow ? crow.cnt : 0;
-      items = await db.all(`
-        SELECT p.id, p.name, p.face_count, p.cover_face_id, f.thumb_path AS cover_thumb
-        FROM   persons p
-        LEFT JOIN faces f ON f.id = p.cover_face_id
-        WHERE  p.face_count > 0
-          AND  (p.name IS NOT NULL AND LOWER(p.name) LIKE ?)
-        ORDER  BY p.face_count DESC
-        LIMIT  ? OFFSET ?
-      `, pattern, limit, offset);
-    } else {
-      const { getPersons } = require('./face-db');
-      ({ items, total } = await getPersons(db, { limit, offset }));
-    }
+    // Both the search and non-search paths now share the same getPersons()
+    // query, so media_count and sort behave identically in both cases.
+    const { items, total } = await getPersons(db, { limit, offset, sort, search });
 
     res.json({
       items: items.map(p => ({
         id:         p.id,
         name:       p.name || null,
         faceCount:  p.face_count,
-        coverThumb: p.cover_thumb ? `/thumbs/face/${p.cover_thumb}` : null,
+        mediaCount: p.media_count,
+        coverThumb: p.cover_media_filename
+          ? `/thumbs/${tname(p.cover_media_filename)}`
+          : (p.cover_thumb ? `/thumbs/face/${p.cover_thumb}` : null),
       })),
       total,
       page,
@@ -1143,7 +1133,9 @@ app.get('/api/faces/persons/:id/media', auth, async (req, res) => {
         id:         person.id,
         name:       person.name || null,
         faceCount:  person.face_count,
-        coverThumb: person.cover_thumb ? `/thumbs/face/${person.cover_thumb}` : null,
+        coverThumb: person.cover_media_filename
+          ? `/thumbs/${tname(person.cover_media_filename)}`
+          : (person.cover_thumb ? `/thumbs/face/${person.cover_thumb}` : null),
       },
       items:   mappedItems,
       total,
@@ -1379,14 +1371,19 @@ app.put('/api/faces/persons/:id/cover', auth, async (req, res) => {
     faceListCacheTs = 0;
     res.json({ ok: true, locked: lock });
   } catch (e) {
+    if (e.code === 'FACE_NOT_IN_PERSON') return res.status(400).json({ error: 'face_not_in_person' });
     res.status(500).json({ error: e.message });
   }
 });
 
 // PUT /api/faces/persons/:id/cover/by-media  { filename }
 // Set person cover from a media filename — full parity for manually-assigned media.
-// Tries: (1) face from this person in this file, (2) any face in this file.
-// If the file has never been face-scanned, returns 404 with a clear message.
+// Prefers a face this person actually owns in the file. Never attempts to
+// write a face owned by someone else (or no one) as this person's cover —
+// existence is checked read-only first, so setPersonCover() is only ever
+// called with a face already confirmed to belong to this person. This is
+// belt-and-suspenders alongside setPersonCover()'s own ownership check
+// (never removed — see ddcb440), not a replacement for it.
 app.put('/api/faces/persons/:id/cover/by-media', auth, async (req, res) => {
   const db = getFaceDB();
   if (!db) return res.status(503).json({ error: 'face_db_unavailable' });
@@ -1396,51 +1393,42 @@ app.put('/api/faces/persons/:id/cover/by-media', auth, async (req, res) => {
   if (!personId || !filename) return res.status(400).json({ error: 'personId and filename required' });
 
   try {
-    // Prefer: highest-confidence face from this person in this media
-    let face = await db.get(`
-      SELECT f.id FROM faces f
-      JOIN   media_index m ON m.id = f.media_id
-      WHERE  m.filename = ? AND f.person_id = ?
-      ORDER  BY f.det_score DESC LIMIT 1
-    `, [filename, personId]);
+    const files = await getFiles();
+    if (!files.some(file => file.name === filename)) {
+      return res.status(404).json({ error: 'media_not_found' });
+    }
+    const { getPerson, setPersonMediaCover } = require('./face-db');
+    if (!await getPerson(db, personId)) return res.status(404).json({ error: 'person_not_found' });
+    await setPersonMediaCover(db, personId, filename, true);
+    faceListCacheTs = 0;
+    return res.json({ ok: true, locked: true });
 
-    // Fallback: any face detected in this media (highest confidence)
-    if (!face) face = await db.get(`
-      SELECT f.id FROM faces f
+    /* Legacy face-cover fallback intentionally unused: media covers do not transfer faces.
+    // This person owns no face in this media. Distinguish the two reasons
+    // read-only, without ever attempting to assign an unowned face as this
+    // person's cover:
+    //   - some face(s) exist here, just not owned by this person
+    //   - literally no face has ever been detected in this media
+    const anyFace = await db.get(`
+      SELECT 1 FROM faces f
       JOIN   media_index m ON m.id = f.media_id
       WHERE  m.filename = ?
-      ORDER  BY f.det_score DESC LIMIT 1
+      LIMIT  1
     `, [filename]);
 
-    if (!face) {
+    if (anyFace) {
       return res.status(404).json({
         error: 'no_face_in_media',
-        message: 'No face detected in this media. Run a face scan first to enable cover selection.'
+        message: 'No face belonging to this person was found in this media. Run a face scan first, or assign this face to the person, to enable cover selection.',
       });
     }
-
-    const { setPersonCover } = require('./face-db');
-    try {
-      await setPersonCover(db, personId, face.id, true);
-    } catch (e) {
-      // setPersonCover now enforces that a person's cover must be a face that
-      // actually belongs to it. The fallback above ("any face in this media")
-      // can pick a face belonging to someone else (or no one) when this
-      // person has no AI-matched face here — that was producing duplicate
-      // cover_face_id values across persons. Degrade to the same response
-      // already used when no face exists at all, rather than silently
-      // setting an unrelated face as this person's cover.
-      if (e.code === 'FACE_NOT_IN_PERSON') {
-        return res.status(404).json({
-          error: 'no_face_in_media',
-          message: 'No face belonging to this person was found in this media. Run a face scan first, or assign this face to the person, to enable cover selection.',
-        });
-      }
-      throw e;
-    }
-    faceListCacheTs = 0;
-    res.json({ ok: true });
+    return res.status(404).json({
+      error: 'no_face_in_media',
+      message: 'No face detected in this media. Run a face scan first to enable cover selection.'
+    });
+    */
   } catch (e) {
+    if (e.code === 'MEDIA_NOT_IN_PERSON') return res.status(400).json({ error: 'media_not_in_person' });
     res.status(500).json({ error: e.message });
   }
 });
@@ -1506,6 +1494,8 @@ app.post('/api/faces/persons/:personId/media', auth, async (req, res) => {
     const { addMediaToCluster, getPerson } = require('./face-db');
     const person = await getPerson(db, personId);
     if (!person) return res.status(404).json({ error: 'person_not_found' });
+    const files = await getFiles();
+    if (!files.some(file => file.name === filename)) return res.status(404).json({ error: 'media_not_found' });
 
     await addMediaToCluster(db, filename, personId);
     facePerFileCache.delete(filename);
