@@ -87,6 +87,16 @@ body::before{content:'';position:fixed;inset:0;
 /* filter row */
 #fr{flex-shrink:0;display:flex;align-items:center;gap:4px;padding:5px 12px;background:rgba(6,6,15,.8);backdrop-filter:blur(10px);border-bottom:1px solid var(--br);overflow-x:auto}
 #fr::-webkit-scrollbar{display:none}
+.filter-wrap{position:relative;flex-shrink:0}
+#filter-btn{min-height:36px;display:inline-flex;align-items:center;gap:6px;padding:6px 11px;background:var(--s3);border:1px solid var(--br2);border-radius:18px;color:var(--t2);font:11px 'IBM Plex Mono',monospace;cursor:pointer}
+#filter-btn:hover,#filter-btn[aria-expanded="true"]{color:var(--t);border-color:rgba(255,43,43,.55);background:var(--r2)}
+#filter-badge{display:none;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:var(--r);color:#fff;font-size:9px;align-items:center;justify-content:center}
+#filter-btn.has-filters #filter-badge{display:inline-flex}
+#filter-pop{display:none;position:absolute;right:0;top:calc(100% + 9px);z-index:100;width:300px;padding:12px;background:var(--s2);border:1px solid var(--br2);border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,.58);font-family:'IBM Plex Mono',monospace}
+#filter-pop.on{display:block;animation:suggIn .13s ease}
+.filter-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;color:var(--t);font-size:11px;font-weight:500}.filter-clear{border:0;background:none;color:var(--r);font:10px 'IBM Plex Mono',monospace;cursor:pointer;padding:7px}.filter-clear:disabled{visibility:hidden}
+.filter-section{padding:9px 0;border-top:1px solid var(--br)}.filter-section:first-of-type{border-top:0}.filter-label{display:block;margin-bottom:7px;color:var(--t3);font-size:9px;letter-spacing:.1em;text-transform:uppercase}.filter-options{display:flex;flex-wrap:wrap;gap:6px}.filter-option{min-height:34px;padding:6px 9px;border:1px solid var(--br2);border-radius:7px;background:var(--s3);color:var(--t2);font:10px 'IBM Plex Mono',monospace;cursor:pointer}.filter-option:hover,.filter-option[aria-pressed="true"]{color:#fff;border-color:rgba(255,43,43,.58);background:var(--r2)}
+#active-filters{display:none;align-items:center;gap:6px;padding:6px 12px;background:rgba(6,6,15,.72);border-bottom:1px solid var(--br);overflow-x:auto;white-space:nowrap}#active-filters.on{display:flex}.active-filter-label{color:var(--t3);font:10px 'IBM Plex Mono',monospace}.filter-chip{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:4px 8px;border:1px solid rgba(255,43,43,.32);border-radius:15px;background:var(--r2);color:var(--t2);font:10px 'IBM Plex Mono',monospace;cursor:pointer}.filter-chip:hover{color:#fff;border-color:var(--r)}.filter-chip b{color:var(--r);font-size:14px;line-height:1}.filter-chip-clear{margin-left:auto;border:0;background:none;color:var(--r);font:10px 'IBM Plex Mono',monospace;cursor:pointer;padding:8px}
 .ft{padding:4px 14px;background:var(--s3);border:1px solid transparent;border-radius:20px;color:var(--t3);font-size:11px;font-family:'IBM Plex Mono',monospace;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;letter-spacing:.03em}
 .ft:hover{color:var(--t2);border-color:var(--br2)}
 .ft.on{background:var(--r);border-color:var(--r);color:#fff;box-shadow:0 0 12px rgba(255,43,43,.25)}
@@ -106,6 +116,12 @@ body::before{content:'';position:fixed;inset:0;
 #stx b{font-weight:400;color:var(--t2)}
 #pb{height:2px;flex:1;background:var(--br2);border-radius:1px;overflow:hidden}
 #pf{height:100%;background:var(--r);width:0%;transition:width .3s}
+
+/* Shared scroll chrome: collapsing flex items reclaims their actual layout
+   height, while the small translate/opacity shift keeps the motion calm. */
+#tb,#fr,#active-filters,#st,#pph,#pp-progress{overflow:hidden;transition:max-height .2s ease,padding .2s ease,border-width .2s ease,opacity .14s ease,transform .2s ease}
+#tb{max-height:72px}#fr{max-height:58px}#active-filters{max-height:56px}#st{max-height:36px}#pph{max-height:62px}#pp-progress{max-height:110px}
+#main.chrome-hidden #tb,#main.chrome-hidden #fr,#main.chrome-hidden #active-filters,#main.chrome-hidden #st,#main.chrome-hidden #pph,#main.chrome-hidden #pp-progress:not(.hide){max-height:0;padding-top:0;padding-bottom:0;border-bottom-width:0;opacity:0;transform:translateY(-8px);pointer-events:none}
 
 /* ── gallery ── */
 #gw{flex:1;overflow-y:scroll;overflow-x:hidden;position:relative;
@@ -191,6 +207,7 @@ body::before{content:'';position:fixed;inset:0;
 #sp2.on{display:block}
 @keyframes spin{to{transform:rotate(360deg)}}
 #emp{display:none;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:11px;gap:12px;text-align:center;letter-spacing:.04em;opacity:.7}
+.empty-clear{min-height:38px;padding:7px 12px;border:1px solid rgba(255,43,43,.45);border-radius:8px;background:var(--r2);color:var(--t);font:11px 'IBM Plex Mono',monospace;cursor:pointer}
 
 /* ── Lightbox ── */
 #lb{position:fixed;inset:0;z-index:200;background:rgba(4,4,14,.97);display:none;flex-direction:column}
@@ -326,8 +343,23 @@ body::before{content:'';position:fixed;inset:0;
 #ppbody{flex:1;overflow-y:auto;padding:14px}
 #ppbody::-webkit-scrollbar{width:3px}
 #ppbody::-webkit-scrollbar-thumb{background:var(--br2);border-radius:2px}
-#pggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px}
-#pggrid .c{position:relative;left:auto;top:auto;width:100%;height:auto;aspect-ratio:1;transform:none!important}
+#pggrid{position:relative;min-height:1px}
+#pggrid .c{position:absolute}
+/* Overview is a people directory; person detail switches this same mount into
+   the positioned, shared All Media gallery above. */
+#ppbody.people-overview #pggrid{display:grid;position:static;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;align-items:start}
+#ppbody.people-overview #pggrid .pgc{min-width:0;padding:17px 12px 15px;gap:8px}
+#ppbody.people-overview .pgav{width:min(100%,116px);height:auto;aspect-ratio:1}
+#ppbody.people-overview .pgn{max-width:100%;font-size:13px}
+#ppbody.people-overview .pgct{font-size:9px}
+@media(min-width:1360px){#ppbody.people-overview #pggrid{grid-template-columns:repeat(5,minmax(0,1fr));gap:22px}}
+@media(min-width:1800px){#ppbody.people-overview #pggrid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media(max-width:1023px){#ppbody.people-overview #pggrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}}
+@media(max-width:640px){#ppbody.people-overview #pggrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}#ppbody.people-overview #pggrid .pgc{padding:14px 10px 12px}#ppbody.people-overview .pgav{width:min(100%,108px)}}
+/* Person detail deliberately uses the same card modes as All Media. */
+#ppbody[data-layout="cinematic"] .c img.c-bg,#ppbody[data-layout="duo"] .c img.c-bg{display:block}
+#ppbody[data-layout="cinematic"] .c img.ti,#ppbody[data-layout="duo"] .c img.ti{object-fit:contain;object-position:center center}
+#person-context{display:none;padding:1px 0 12px;margin-bottom:2px;border-bottom:1px solid var(--br)}#person-context.on{display:block}.person-context-meta{display:block;color:var(--t3);font:10px 'IBM Plex Mono',monospace}
 
 /* Person list card */
 .pgc{
@@ -343,6 +375,7 @@ body::before{content:'';position:fixed;inset:0;
   box-shadow:0 8px 36px rgba(0,0,0,.55),0 0 0 1px rgba(255,43,43,.2);
   transform:translateY(-3px);
 }
+.pgc{background:var(--s2);border-radius:10px;box-shadow:var(--shadow-card);gap:9px}.pgc:hover{background:var(--s2);box-shadow:var(--shadow-hover)}
 
 /* Avatar ring */
 .pgav{
@@ -440,6 +473,7 @@ body::before{content:'';position:fixed;inset:0;
 .pm-btn{flex:1;padding:3px 0;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:4px;color:rgba(255,255,255,.7);font-size:8px;font-family:'IBM Plex Mono',monospace;cursor:pointer;transition:all .12s;text-align:center;white-space:nowrap}
 .pm-btn:hover{background:rgba(255,43,43,.35);border-color:rgba(255,43,43,.6);color:#fff}
 .pm-btn.safe:hover{background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.5);color:#2ecc71}
+#pggrid .c .pm-overlay{transform:translateY(0);opacity:0;pointer-events:none;transition:opacity .16s,transform .16s}#pggrid .c:hover .pm-overlay,#pggrid .c:focus-within .pm-overlay{opacity:1;pointer-events:auto}@media(max-width:640px){#person-context{padding-bottom:9px;margin-bottom:0}.person-context-avatar{width:34px;height:34px}.pm-btn{min-height:30px;font-size:9px}}
 
 /* ── Modals ── */
 .vmodal-bg{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:310;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
@@ -499,6 +533,13 @@ body::before{content:'';position:fixed;inset:0;
 #toast-el.on{transform:translateX(-50%) translateY(0);opacity:1}
 #toast-el.ok{border-color:#2ecc71;color:#2ecc71;box-shadow:0 8px 32px rgba(0,0,0,.6),0 0 12px rgba(46,204,113,.15)}
 #toast-el.err{border-color:var(--r);color:var(--r);box-shadow:0 8px 32px rgba(0,0,0,.6),0 0 12px rgba(255,43,43,.15)}
+#toast-el.on{pointer-events:auto;display:flex;align-items:center;gap:10px;max-width:min(92vw,520px);white-space:normal}
+.toast-close{border:0;background:transparent;color:currentColor;cursor:pointer;font-size:16px;line-height:1;padding:4px;flex:none}
+
+/* ── Product-state recovery + confirmation ── */
+.state-action{margin-top:4px;min-height:38px;padding:7px 12px;border:1px solid var(--br2);border-radius:8px;background:var(--s3);color:var(--t);font:11px 'IBM Plex Mono',monospace;cursor:pointer}
+.state-action:hover{border-color:var(--r);background:var(--r2)}
+#confirm-bg{position:fixed;inset:0;z-index:450;display:none;place-items:center;background:rgba(0,0,0,.62);backdrop-filter:blur(6px)}#confirm-bg.on{display:grid}.confirm-card{width:min(400px,calc(100vw - 32px));padding:20px;background:var(--s2);border:1px solid var(--br2);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.6)}.confirm-card h2{font-size:16px}.confirm-card p{margin-top:9px;color:var(--t2);font:12px/1.55 'IBM Plex Mono',monospace}.confirm-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.confirm-actions button{min-height:40px;padding:0 14px;border-radius:8px;font:700 11px 'Space Grotesk',sans-serif;cursor:pointer}.confirm-cancel{border:1px solid var(--br2);background:transparent;color:var(--t2)}.confirm-danger{border:1px solid var(--r);background:var(--r);color:#fff}
 
 /* ── Assign-modal-open: dim the lightbox behind the modal overlay ── */
 /* When the assign modal is open on top of the lightbox, freeze all lb           */
@@ -564,7 +605,7 @@ body::before{content:'';position:fixed;inset:0;
 #search-sugg{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--s);border:1px solid var(--br2);border-radius:8px;z-index:80;box-shadow:0 8px 28px rgba(0,0,0,.6);max-height:280px;overflow-y:auto;display:none;flex-direction:column}
 #search-sugg.on{display:flex}
 .sugg-sect{padding:5px 10px 2px;font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;flex-shrink:0}
-.sugg-item{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;transition:background .1s;flex-shrink:0}
+.sugg-item{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;transition:background .1s;flex-shrink:0;border:0;width:100%;text-align:left;background:transparent;color:inherit;font:inherit}
 .sugg-item:hover{background:var(--s3)}
 .sugg-av{width:28px;height:28px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--s3);display:flex;align-items:center;justify-content:center}
 .sugg-av img{width:100%;height:100%;object-fit:cover}
@@ -748,12 +789,36 @@ body.rail-collapsed #main{margin-left:var(--rail-c)}
 
 /* ── Sidebar snb icon size ── */
 .snb svg{width:15px;height:15px;flex-shrink:0}
+.skip-link{position:fixed;left:12px;top:-60px;z-index:1000;background:var(--r);color:#fff;padding:10px 14px;border-radius:8px;font-weight:700;transition:top .15s}
+.skip-link:focus{top:12px}
+
+/* ── Navigation + accessibility polish ── */
+:focus{outline:none}
+:focus-visible{outline:3px solid #ff6b6b!important;outline-offset:3px!important;box-shadow:0 0 0 6px rgba(255,43,43,.2)!important}
+button,input,select,[tabindex]{-webkit-tap-highlight-color:transparent}
+button:disabled,[aria-disabled="true"]{cursor:not-allowed!important;opacity:.45!important;filter:saturate(.55)}
+button:active:not(:disabled){transform:translateY(1px)}
+.snb{min-height:42px;padding:10px 12px;position:relative}
+.snb.on::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--r);box-shadow:0 0 14px rgba(255,43,43,.75)}
+.snb svg,.bnav-btn svg{width:18px;height:18px}
+#rail-toggle,#hb,#search-clear,#theme-btn,#lbcl,.pg-menu-btn,.cf,.vpc-btn{min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center}
+#upl,.ft,.lm-btn,.lb,.pd-btn,#ppback,.scan-toggle,.scan-item{min-height:40px;display:inline-flex;align-items:center;justify-content:center}
+.ft{padding-inline:15px}.lb{padding:8px 14px}.vpc-btn{padding:8px}
+.c:focus-visible,.pgc:focus-visible{outline-color:#ff6b6b!important;z-index:4}
+.pgc:focus-visible{transform:translateY(-3px)}
+.vmodal-bg{isolation:isolate}.vmodal{max-height:min(82vh,680px);overflow:auto}
+[role="dialog"]{outline:none}
+.scan-toggle[aria-expanded="true"]{border-color:rgba(255,43,43,.65);color:var(--t);background:var(--r2)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+@media (max-width:640px){.bnav-btn{min-height:52px}.bnav-btn.on{color:var(--r)}#bnav{padding-bottom:max(4px,env(safe-area-inset-bottom))}.vmodal{width:min(94vw,420px)!important}.snb{min-height:46px}.ft{min-height:38px}}
+@media(max-width:640px){#filter-pop{position:fixed;left:12px;right:12px;top:auto;width:auto;bottom:76px;max-height:60vh;overflow:auto}.filter-option{min-height:40px}#active-filters{padding-bottom:7px}}
 </style>
 </head>
 <body>
 
-<div id="ov"></div>
-<aside id="sb">
+<div id="ov" aria-hidden="true"></div>
+<a class="skip-link" href="#gw">Skip to media gallery</a>
+<aside id="sb" aria-label="Primary navigation">
   <div class="sl">
     <div class="sl-brand"><div class="slt">VAULT OS</div><div class="sls">Private Media Vault</div></div>
     <button id="rail-toggle" title="Toggle sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
@@ -799,6 +864,18 @@ body.rail-collapsed #main{margin-left:var(--rail-c)}
     <button class="ft" data-t="recent">Recent</button>
     <button class="ft" data-t="viewed">Most Viewed</button>
     <span style="flex:1"></span>
+    <div class="filter-wrap">
+      <button id="filter-btn" type="button" aria-expanded="false" aria-controls="filter-pop" aria-label="Open filters">⌘ Filters <span id="filter-badge">0</span></button>
+      <div id="filter-pop" role="dialog" aria-label="Media filters">
+        <div class="filter-title"><span>Filter media</span><button id="filter-clear" class="filter-clear" type="button">Clear all</button></div>
+        <div class="filter-section"><span class="filter-label">Media type</span><div class="filter-options" data-filter-group="type">
+          <button class="filter-option" type="button" data-filter="all">All media</button><button class="filter-option" type="button" data-filter="image">Images</button><button class="filter-option" type="button" data-filter="video">Videos</button><button class="filter-option" type="button" data-filter="gif">GIFs</button>
+        </div></div>
+        <div class="filter-section"><span class="filter-label">Your library</span><div class="filter-options" data-filter-group="collection">
+          <button class="filter-option" type="button" data-filter="fav">Favorites</button><button class="filter-option" type="button" data-filter="recent">Recently viewed</button><button class="filter-option" type="button" data-filter="viewed">Most viewed</button>
+        </div></div>
+      </div>
+    </div>
     <div class="sort-wrap" id="sort-wrap">
       <label for="sort-sel">Sort</label>
       <select id="sort-sel" class="sort-sel" title="Change sort order">
@@ -828,6 +905,7 @@ body.rail-collapsed #main{margin-left:var(--rail-c)}
       </button>
     </div>
   </div>
+  <div id="active-filters" aria-live="polite" aria-label="Active search and filters"></div>
   <div id="st">
     <div id="stx">Loading… <b id="st-sh">0</b> files</div>
     <div id="pb"><div id="pf"></div></div>
@@ -885,6 +963,7 @@ body.rail-collapsed #main{margin-left:var(--rail-c)}
       <div id="pp-prog-stats"></div>
     </div>
     <div id="ppbody">
+      <section id="person-context" aria-label="Person media summary"><span class="person-context-meta"></span></section>
       <div id="pggrid"></div>
       <div id="ppload"><div id="ppsp"></div></div>
       <div id="ppempty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>No people indexed yet.<br>Run a face scan to get started.</div>
@@ -954,6 +1033,7 @@ body.rail-collapsed #main{margin-left:var(--rail-c)}
 
 <!-- ── Toast ── -->
 <div id="toast-el"></div>
+<div id="confirm-bg" aria-hidden="true"><section class="confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message"><h2 id="confirm-title">Confirm action</h2><p id="confirm-message"></p><div class="confirm-actions"><button class="confirm-cancel" type="button">Cancel</button><button class="confirm-danger" type="button">Delete</button></div></section></div>
 
 <!-- Lightbox -->
 <div id="lb">
@@ -1619,6 +1699,10 @@ async function fetchPage(reset=false) {
   } catch (e) {
     if (_fetchGen !== myGen) return; // ignore errors from stale fetches
     console.error(e);
+    more = false;
+    empEl.style.display = 'flex';
+    empEl.innerHTML = `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 8v5m0 3h.01"/></svg><strong>Couldn’t load media</strong><span>Check your connection, then try again.</span><button class="state-action" data-retry-gallery>Retry</button>`;
+    showToast('Couldn’t load media. Try again.', 'err', 5000);
   } finally {
     // Only the current generation releases the loading flag
     if (_fetchGen === myGen) {
@@ -1633,7 +1717,8 @@ function updateStats() {
   stLd.textContent  = items.length.toLocaleString();
   stSh.textContent  = items.length.toLocaleString();
   pfEl.style.width  = (total ? items.length/total*100 : 0)+'%';
-  stxEl.innerHTML   = `Ready — <b>${items.length.toLocaleString()}</b> files`;
+  stxEl.innerHTML   = `${(csearch || ctype !== 'all') ? 'Results' : 'Ready'} — <b>${total.toLocaleString()}</b> ${total === 1 ? 'file' : 'files'}${more ? ` <span style="opacity:.65">(${items.length.toLocaleString()} loaded)</span>` : ''}`;
+  if (typeof renderFilterState === 'function') renderFilterState();
 
   if (!more && !items.length) {
     empEl.style.display = 'flex';
@@ -1653,7 +1738,7 @@ function updateStats() {
     } else if (csearch) {
       empEl.innerHTML =
         `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>` +
-        `No results for "<b style="color:var(--t)">${csearch}</b>"`;
+        `<strong>No media found</strong><span>Nothing matches search: <b style="color:var(--t)">${csearch}</b>${ctype !== 'all' ? ` and ${ctype}` : ''}</span><button class="empty-clear" data-clear-filters="search">Clear search</button>`;
     } else {
       empEl.innerHTML =
         `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 20M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>No files found`;
@@ -1662,6 +1747,10 @@ function updateStats() {
     empEl.style.display = 'none';
   }
 }
+
+empEl.addEventListener('click', e => {
+  if (e.target.closest('[data-retry-gallery]')) fetchPage(true);
+});
 
 // ─────────────────────────────────────────────────────────────
 //  SCROLL  —  rAF throttled, never blocks main thread
@@ -1693,6 +1782,7 @@ window.addEventListener('resize', () => {
     _positions = []; // force masonry recompute
     _masonryColHeights = null;
     layout(); updateSpacer(); renderGrid();
+    if (typeof layoutPersonMedia === 'function') layoutPersonMedia();
   }, 200);
 });
 
@@ -1719,6 +1809,7 @@ function setLayout(mode) {
   _positions = [];
   _masonryColHeights = null;
   layout(); updateSpacer(); renderGrid();
+  if (typeof layoutPersonMedia === 'function') layoutPersonMedia();
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1767,7 +1858,9 @@ async function fetchSuggestions(q) {
         const name  = p.name || `Person ${p.id}`;
         const count = p.faceCount || p.face_count || 0;
         const thumb = p.coverThumb || null;
-        const item  = document.createElement('div');
+        const item  = document.createElement('button');
+        item.type = 'button';
+        item.setAttribute('aria-label', `Open ${name}, ${count} ${count===1?'face':'faces'}`);
         item.className = 'sugg-item';
         item.innerHTML =
           `<div class="sugg-av">${
@@ -1777,7 +1870,7 @@ async function fetchSuggestions(q) {
           }</div>` +
           `<span class="sugg-name">${name}</span>` +
           `<span class="sugg-meta">${count} face${count===1?'':'s'}</span>`;
-        item.addEventListener('mousedown', e => {
+        item.addEventListener('click', e => {
           e.preventDefault();
           hideSugg(); srchEl.value = ''; csearch = '';
           navigateToPerson(p);
@@ -1796,7 +1889,9 @@ async function fetchSuggestions(q) {
 
       files.forEach(f => {
         const ext  = f.name.split('.').pop().toUpperCase();
-        const item = document.createElement('div');
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.setAttribute('aria-label', `Open ${f.name}`);
         item.className = 'sugg-item';
         item.innerHTML =
           `<div class="sugg-av" style="border-radius:4px">${
@@ -1806,7 +1901,7 @@ async function fetchSuggestions(q) {
           }</div>` +
           `<span class="sugg-name" style="font-size:11px">${f.name}</span>` +
           `<span class="sugg-meta">${f.type||ext}</span>`;
-        item.addEventListener('mousedown', e => {
+        item.addEventListener('click', e => {
           e.preventDefault();
           hideSugg(); srchEl.value = ''; csearch = '';
           openFileFromSearch(f);
@@ -1906,7 +2001,7 @@ document.addEventListener('click', e => {
 // ─────────────────────────────────────────────────────────────
 //  TYPE FILTER
 // ─────────────────────────────────────────────────────────────
-function setType(t) {
+function setType(t, preserveSearch = false) {
   saveScroll();          // preserve current view's scroll before switching
   // If we're in people view, switch DOM to gallery first WITHOUT triggering a
   // fetch — setType handles the fetch below.  This also sets viewMode='gallery'
@@ -1914,12 +2009,15 @@ function setType(t) {
   // click event will see viewMode==='gallery' and skip their own showGalleryView()
   // call, preventing a double fetchPage(true).
   if (viewMode !== 'gallery') showGalleryView(true);
-  // Clear all search state — prevents stale filter bleed across tabs
-  csearch = '';
-  srchEl.value = '';
-  srchEl.classList.remove('has-value');
-  document.getElementById('sw').classList.remove('active');
-  hideSugg();
+  // Retain an active search while refining by type; ordinary navigation still
+  // clears it to preserve the existing clean-tab behavior.
+  if (!preserveSearch) {
+    csearch = '';
+    srchEl.value = '';
+    srchEl.classList.remove('has-value');
+    document.getElementById('sw').classList.remove('active');
+    hideSugg();
+  }
   ctype = t;
   document.querySelectorAll('.ft,.snb').forEach(b => b.classList.toggle('on', b.dataset.t === t));
   sbEl.classList.remove('on'); ovEl.classList.remove('on');
@@ -2080,6 +2178,10 @@ document.getElementById('lbmw').addEventListener('mousemove', () => {
 });
 
 // Sync video events → update controls
+lbvEl.addEventListener('canplay', () => lbEl.setAttribute('aria-busy', 'false'));
+lbvEl.addEventListener('error', () => { lbEl.setAttribute('aria-busy', 'false'); showToast('This video could not be played.', 'err'); });
+lbiEl.addEventListener('load', () => lbEl.setAttribute('aria-busy', 'false'));
+lbiEl.addEventListener('error', () => { lbEl.setAttribute('aria-busy', 'false'); lbiEl.removeAttribute('src'); showToast('This image could not be loaded.', 'err'); });
 lbvEl.addEventListener('play',  () => { vpcShow(true); });
 lbvEl.addEventListener('pause', () => { vpcShow(false); }); // stay visible when paused
 lbvEl.addEventListener('ended', () => { vpcShow(false); });
@@ -2137,6 +2239,7 @@ function showLB() {
   document.getElementById('lbnx').style.display = navStyle;
 
   if (it.type==='video') {
+    lbEl.setAttribute('aria-busy', 'true');
     lbvEl.src=it.url;
     lbvEl.style.display='block';
     // Trigger fade-in animation
@@ -2146,6 +2249,7 @@ function showLB() {
     lbvEl.play().catch(()=>{});
     vpcInit();
   } else {
+    lbEl.setAttribute('aria-busy', 'true');
     lbiEl.src=it.url; lbiEl.style.display='block';
     // Trigger fade-in animation
     lbiEl.classList.remove('lb-nav-anim');
@@ -2301,6 +2405,7 @@ const stEl      = document.getElementById('st');
 function showGalleryView(skipFetch = false) {
   saveScroll();          // preserve people scroll before leaving
   viewMode = 'gallery';
+  if (gwEl.scrollTop <= 12) setChromeHidden(false);
   ppEl.classList.remove('on');
   gwWrapEl.style.display = '';
   tbEl.style.display    = '';   // toolbar always visible
@@ -2339,6 +2444,10 @@ function showPeopleView() {
     history.pushState({ view: 'people' }, '', '#people');
   }
   viewMode = 'people';
+  setChromeHidden(false);
+  ppbodyEl.classList.add('people-overview');
+  ppbodyEl.removeAttribute('data-layout');
+  if (typeof updatePersonContext === 'function') updatePersonContext(null);
   gwWrapEl.style.display = 'none';
   // Keep toolbar visible so search works in people view too
   tbEl.style.display    = '';
@@ -2371,6 +2480,8 @@ function navigateToPerson(p) {
       history.pushState({ view: 'people' }, '', '#people');
     }
     viewMode = 'people';
+    ppbodyEl.classList.add('people-overview');
+    ppbodyEl.removeAttribute('data-layout');
     gwWrapEl.style.display = 'none';
     // Toolbar stays visible — search must work in people view
     tbEl.style.display     = '';
@@ -2400,8 +2511,13 @@ const toastEl = document.getElementById('toast-el');
 
 function showToast(msg, type = 'ok', duration = 2800) {
   clearTimeout(_toastTimer);
-  toastEl.textContent = msg;
+  toastEl.innerHTML = '';
+  const text = document.createElement('span'); text.textContent = msg;
+  const close = document.createElement('button'); close.type = 'button'; close.className = 'toast-close'; close.setAttribute('aria-label', 'Dismiss notification'); close.textContent = '×';
+  close.onclick = () => toastEl.classList.remove('on');
+  toastEl.append(text, close);
   toastEl.className   = type;          // 'ok' | 'err' | ''
+  toastEl.setAttribute('role', type === 'err' ? 'alert' : 'status');
   toastEl.classList.add('on');
   _toastTimer = setTimeout(() => toastEl.classList.remove('on'), duration);
 }
@@ -2425,6 +2541,54 @@ const ppbodyEl    = document.getElementById('ppbody');
 const pdActEl     = document.getElementById('pd-actions');
 const ppSortWrapEl = document.getElementById('pp-sort-wrap');
 const ppSortSelEl  = document.getElementById('pp-sort-sel');
+const personContextEl = document.getElementById('person-context');
+
+// ── Scroll-aware top chrome ──────────────────────────────────
+// Each gallery owns its scroll container, so one small direction controller is
+// attached to both rather than making the sidebar or overlays participate.
+let chromeHidden = false;
+function headerInteractionActive() {
+  const focused = document.activeElement;
+  return !!(
+    focused?.closest?.('#tb,#fr,#active-filters,#pph,#pp-progress') ||
+    document.getElementById('filter-pop')?.classList.contains('on') ||
+    document.getElementById('scan-menu')?.classList.contains('on')
+  );
+}
+function setChromeHidden(hidden) {
+  if (hidden && headerInteractionActive()) return;
+  if (chromeHidden === hidden) return;
+  chromeHidden = hidden;
+  mainEl.classList.toggle('chrome-hidden', hidden);
+}
+function installScrollChrome(scroller) {
+  let previous = 0;
+  let ticking = false;
+  scroller.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      const top = scroller.scrollTop;
+      const delta = top - previous;
+      previous = top;
+      if (top <= 12) { setChromeHidden(false); return; }
+      if (Math.abs(delta) < 7) return; // filters touch jitter / trackpad noise
+      if (delta > 0 && top > 72) setChromeHidden(true);
+      else if (delta < 0) setChromeHidden(false);
+    });
+  }, { passive: true });
+}
+installScrollChrome(gwEl);
+installScrollChrome(ppbodyEl);
+
+function updatePersonContext(person) {
+  if (!person || pdPersonId === null) { personContextEl.classList.remove('on'); return; }
+  const media = person.mediaCount ?? person.media_count ?? null;
+  const faces = person.faceCount ?? person.face_count ?? 0;
+  personContextEl.querySelector('.person-context-meta').textContent = `${media === null ? '' : `${media} file${media === 1 ? '' : 's'} · `}${faces} face${faces === 1 ? '' : 's'}`;
+  personContextEl.classList.add('on');
+}
 
 // Sort change: reset pagination, clear the grid, reload page 0 with the new
 // sort — for whichever mode (plain list or filtered search) is active.
@@ -2469,6 +2633,10 @@ async function loadPeople(reset = true) {
     }
   } catch (e) {
     console.error('loadPeople:', e);
+    ppMore = false;
+    ppemptyEl.style.display = 'flex';
+    ppemptyEl.innerHTML = `Couldn’t load People.<br><button class="state-action" data-retry-people>Retry</button>`;
+    showToast('Couldn’t load People. Try again.', 'err', 5000);
   } finally {
     ppLoading = false;
     ppspEl.classList.remove('on');
@@ -2496,12 +2664,18 @@ async function loadPeopleFiltered(q) {
     } else {
       d.items.forEach(p => renderPersonCard(p));
     }
-  } catch (e) { console.error('loadPeopleFiltered:', e); }
+  } catch (e) {
+    console.error('loadPeopleFiltered:', e);
+    ppMore = false;
+    ppemptyEl.style.display = 'flex';
+    ppemptyEl.innerHTML = `Couldn’t search People.<br><button class="state-action" data-retry-people>Retry</button>`;
+  }
   finally { ppLoading = false; ppspEl.classList.remove('on'); }
 }
 
 // Tracks the currently open context menu so we can close it on outside-click
 let _openCtxMenu = null;
+ppemptyEl.addEventListener('click', e => { if (e.target.closest('[data-retry-people]')) loadPeople(srchEl.value.trim() === ''); });
 document.addEventListener('click', () => {
   if (_openCtxMenu) { _openCtxMenu.classList.remove('on'); _openCtxMenu = null; }
 }, true);
@@ -2510,6 +2684,7 @@ function renderPersonCard(person) {
   const card = document.createElement('div');
   card.className = 'pgc';
   const displayName = person.name || `Person ${person.id}`;
+  updatePersonContext(person);
   const thumb = person.coverThumb || null;
   // Primary count is media files (AI-detected + manually assigned, deduped) —
   // NOT the raw AI face_count. Face count remains available as secondary info.
@@ -2580,6 +2755,70 @@ let pdPage     = 0;
 let pdPersonId = null;
 let pdItems    = [];  // flat list of media items for current person — used by cluster-aware lightbox
 
+// Person media uses the same layout modes and measurements as All Media.  The
+// data source is different, but the cards, dimensions, spacing, and preview
+// lifecycle are intentionally shared.
+function layoutPersonMedia() {
+  if (pdPersonId === null || !ppgridEl) return;
+  const w = ppgridEl.clientWidth;
+  if (!w) return;
+  const isMobile = window.innerWidth < 640;
+  const isTablet = window.innerWidth < 1024;
+  let personCols, personCW, personRH;
+
+  switch (currentLayout) {
+    case 'dense':
+      personCols = isMobile ? 4 : Math.max(4, Math.floor((w + GAP) / (90 + GAP)));
+      personCW = Math.floor((w - (personCols - 1) * GAP) / personCols);
+      personRH = personCW;
+      break;
+    case 'cinematic':
+      personCols = isMobile ? 1 : isTablet ? 2 : Math.max(2, Math.floor((w + GAP) / (320 + GAP)));
+      personCW = Math.floor((w - (personCols - 1) * GAP) / personCols);
+      personRH = Math.round(personCW * 9 / 16);
+      break;
+    case 'duo':
+      personCols = isMobile ? 1 : 2;
+      personCW = personCols === 1 ? w : Math.floor((w - GAP) / 2);
+      personRH = Math.round(personCW * 0.62);
+      break;
+    case 'masonry':
+      personCols = isMobile ? 2 : isTablet ? 3 : 4;
+      personCW = Math.floor((w - (personCols - 1) * GAP) / personCols);
+      personRH = personCW;
+      break;
+    default:
+      {
+        const minC = isMobile ? 110 : isTablet ? 130 : 180;
+        personCols = Math.max(2, Math.floor((w + GAP) / (minC + GAP)));
+        personCW = Math.floor((w - (personCols - 1) * GAP) / personCols);
+        personRH = personCW;
+      }
+  }
+
+  ppbodyEl.dataset.layout = currentLayout;
+  let maxBottom = 0;
+  const columnHeights = new Array(personCols).fill(0);
+  ppgridEl.querySelectorAll('.c').forEach((card, index) => {
+    let x, y, width = personCW, height = personRH;
+    if (currentLayout === 'masonry') {
+      const column = columnHeights.indexOf(Math.min(...columnHeights));
+      height = Math.round(personCW * _hashAspect(pdItems[index]?.name || ''));
+      x = column * (personCW + GAP);
+      y = columnHeights[column];
+      columnHeights[column] += height + GAP;
+    } else {
+      x = (index % personCols) * (personCW + GAP);
+      y = Math.floor(index / personCols) * (personRH + GAP);
+    }
+    card.style.transform = `translate(${x}px,${y}px)`;
+    card.style.width = width + 'px';
+    card.style.height = height + 'px';
+    maxBottom = Math.max(maxBottom, y + height);
+  });
+  ppgridEl.style.height = Math.max(0, maxBottom) + 'px';
+}
+
 function clearPersonMediaGrid() {
   ppgridEl.querySelectorAll('.c').forEach(el => {
     cancelLoadsForEl(el);
@@ -2587,6 +2826,7 @@ function clearPersonMediaGrid() {
     if (typeof previewObserver !== 'undefined') previewObserver.unobserve(el);
   });
   ppgridEl.innerHTML = '';
+  ppgridEl.style.height = '';
 }
 
 async function openPersonDetail(personOrId, legacyName) {
@@ -2597,18 +2837,22 @@ async function openPersonDetail(personOrId, legacyName) {
     : { id: personOrId, name: legacyName || null, faceCount: 0, coverThumb: null };
 
   pdPersonId = person.id;
+  setChromeHidden(false);
+  ppbodyEl.classList.remove('people-overview');
   _curPerson = { ...person };
   pdItems    = [];  // reset cluster-context items for new person
 
   pdLoading = false;
   pdMore    = true;
   pdPage    = 0;
-  ppgridEl.innerHTML   = '';
+  clearPersonMediaGrid();
   ppemptyEl.style.display = 'none';
 
   const displayName = person.name || `Person ${person.id}`;
   document.getElementById('ppback').classList.add('on');
+  document.getElementById('ppback').textContent = '← People';
   document.getElementById('pptitle').textContent = displayName;
+  updatePersonContext(person);
   pdActEl.classList.add('on');
   if (ppSortWrapEl) ppSortWrapEl.classList.add('off');
   ppbodyEl.scrollTop = 0;
@@ -2644,7 +2888,7 @@ async function loadPersonMedia(reset = false) {
     const d = await r.json();
 
     // Keep _curPerson in sync with latest server data
-    if (d.person) _curPerson = { ..._curPerson, ...d.person };
+    if (d.person) { _curPerson = { ..._curPerson, ...d.person, mediaCount: d.total }; updatePersonContext(_curPerson); }
 
     pdMore = d.hasMore === true;
     pdPage++;
@@ -2659,6 +2903,7 @@ async function loadPersonMedia(reset = false) {
         pdItems.push(item);          // accumulate for cluster-context lightbox
         renderPersonMediaCard(item);
       });
+      layoutPersonMedia();
     }
   } catch (e) {
     console.error('[personMedia] fetch failed:', e);
@@ -2742,6 +2987,7 @@ function renderPersonMediaCard(item) {
           if (typeof previewObserver !== 'undefined') previewObserver.unobserve(card);
           card.remove();
           pdItems = pdItems.filter(it => it.name !== name);
+          layoutPersonMedia();
           showToast('Removed from cluster', 'ok');
         }
         else showToast('Failed to remove', 'err');
@@ -2767,6 +3013,7 @@ function renderPersonMediaCard(item) {
           if (typeof previewObserver !== 'undefined') previewObserver.unobserve(card);
           card.remove();
           pdItems = pdItems.filter(it => it.name !== name);
+          layoutPersonMedia();
           showToast('Feedback saved — face removed', 'ok');
         }
         else showToast('Failed to save feedback', 'err');
@@ -2787,7 +3034,11 @@ function goBackToPeopleList() {
   pdPersonId = null;
   _curPerson = null;
   pdItems    = [];
+  ppbodyEl.classList.add('people-overview');
+  ppbodyEl.removeAttribute('data-layout');
+  updatePersonContext(null);
   document.getElementById('ppback').classList.remove('on');
+  document.getElementById('ppback').textContent = '← People';
   document.getElementById('pptitle').textContent = 'People';
   pdActEl.classList.remove('on');
   if (ppSortWrapEl) ppSortWrapEl.classList.remove('off');
@@ -3008,7 +3259,11 @@ mergeOkBtn.addEventListener('click', async () => {
 //  DELETE PERSON
 // ─────────────────────────────────────────────────────────────
 async function confirmDeletePerson(personId, displayName, cardEl, fromDetail = false) {
-  if (!confirm(`Delete "${displayName}"?\n\nThis removes the person cluster. Media files are not affected.`)) return;
+  if (!await confirmVault({
+    title: `Delete ${displayName}?`,
+    message: 'This removes the person cluster and its assignments. Your media files are not deleted.',
+    action: 'Delete person',
+  })) return;
   try {
     const r = await fetch(`/api/faces/persons/${personId}`, { method: 'DELETE' });
     if (r.ok) {
@@ -3673,7 +3928,9 @@ const previewObserver = new IntersectionObserver((entries) => {
       stopCardPreview(el);
     }
   }
-}, { root: gwEl, threshold: 0.3 });
+// Use the viewport rather than the All Media scroller as the root: the exact
+// same shared cards can then preview in either All Media or a Person detail.
+}, { root: null, threshold: 0.3 });
 
 // ─────────────────────────────────────────────────────────────
 //  DARK / LIGHT THEME TOGGLE
@@ -3870,6 +4127,204 @@ const previewObserver = new IntersectionObserver((entries) => {
   dedupBtn.addEventListener('click', () =>
     runScanAction(dedupBtn, 'Dedup', '/api/faces/deduplicate', null));
 })();
+
+// ─────────────────────────────────────────────────────────────
+//  ACCESSIBLE NAVIGATION + OVERLAY CONTRACT
+// ─────────────────────────────────────────────────────────────
+(function initAccessibleUI() {
+  const modalEls = [...document.querySelectorAll('.vmodal-bg')];
+  const modalFocus = new Map();
+  let lightboxFocus = null;
+
+  // Give landmarks, icon controls, and dynamic controls reliable semantics.
+  document.getElementById('main').setAttribute('role', 'main');
+  document.getElementById('bnav').setAttribute('aria-label', 'Mobile navigation');
+  document.getElementById('toast-el').setAttribute('role', 'status');
+  document.getElementById('toast-el').setAttribute('aria-live', 'polite');
+  document.getElementById('stx').setAttribute('aria-live', 'polite');
+  document.querySelectorAll('svg').forEach(svg => svg.setAttribute('aria-hidden', 'true'));
+  const labels = {
+    hb: 'Open navigation menu', 'search-clear': 'Clear search', 'theme-btn': 'Toggle color theme',
+    lbcl: 'Close media viewer', lbpv: 'Previous media', lbnx: 'Next media',
+    'vpc-pp': 'Play or pause video', 'vpc-mu': 'Mute or unmute video', 'vpc-fs': 'Toggle fullscreen',
+  };
+  Object.entries(labels).forEach(([id, label]) => document.getElementById(id)?.setAttribute('aria-label', label));
+  document.querySelectorAll('.lm-btn').forEach(btn => btn.setAttribute('aria-label', `${btn.title || 'Select'} layout`));
+  document.querySelectorAll('.ft,.snb,.bnav-btn').forEach(btn => btn.setAttribute('type', 'button'));
+
+  modalEls.forEach(bg => {
+    const dialog = bg.querySelector('.vmodal');
+    const title = dialog.querySelector('.vmodal-title');
+    if (title && !title.id) title.id = `${bg.id}-title`;
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    if (title) dialog.setAttribute('aria-labelledby', title.id);
+    bg.setAttribute('aria-hidden', 'true');
+  });
+  const lbTitle = document.getElementById('lbn');
+  lbTitle.id = 'media-viewer-title';
+  lbEl.setAttribute('role', 'dialog'); lbEl.setAttribute('aria-modal', 'true');
+  lbEl.setAttribute('aria-labelledby', 'media-viewer-title'); lbEl.setAttribute('aria-hidden', 'true');
+
+  function focusables(container) {
+    return [...container.querySelectorAll('button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+      .filter(el => el.offsetParent !== null);
+  }
+  function trapFocus(event, container) {
+    if (event.key !== 'Tab') return;
+    const nodes = focusables(container); if (!nodes.length) return;
+    const first = nodes[0], last = nodes[nodes.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  }
+  function syncNav() {
+    const people = viewMode === 'people';
+    document.querySelectorAll('.snb,.ft,.bnav-btn').forEach(btn => {
+      const active = people ? (btn.id === 'nav-people' || btn.id === 'bnav-people') : btn.dataset.t === ctype;
+      btn.classList.toggle('on', active);
+      if (active) btn.setAttribute('aria-current', 'page'); else btn.removeAttribute('aria-current');
+    });
+    document.querySelectorAll('.lm-btn').forEach(btn => btn.setAttribute('aria-pressed', String(btn.classList.contains('on'))));
+    document.getElementById('rail-toggle')?.setAttribute('aria-expanded', String(!sbEl.classList.contains('collapsed')));
+    document.getElementById('scan-toggle')?.setAttribute('aria-expanded', String(document.getElementById('scan-menu').classList.contains('on')));
+  }
+  function enhanceDynamic(root = document) {
+    root.querySelectorAll('.c:not([data-a11y]),.pgc:not([data-a11y])').forEach(card => {
+      card.dataset.a11y = '1'; card.tabIndex = 0; card.setAttribute('role', 'button');
+      const name = card.querySelector('.c-ov-name,.pgn')?.textContent?.trim();
+      card.setAttribute('aria-label', name ? `Open ${name}` : 'Open media');
+    });
+    root.querySelectorAll('.pg-menu-btn:not([aria-label])').forEach(btn => btn.setAttribute('aria-label', 'Person options'));
+  }
+  new MutationObserver(() => { enhanceDynamic(); syncNav(); }).observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['class'] });
+  enhanceDynamic(); syncNav();
+
+  // Modal lifecycle: focus moves in, is trapped, and returns to its trigger.
+  modalEls.forEach(bg => new MutationObserver(() => {
+    const isOpen = !bg.classList.contains('hide');
+    bg.setAttribute('aria-hidden', String(!isOpen));
+    if (isOpen) {
+      if (!modalFocus.has(bg)) modalFocus.set(bg, document.activeElement);
+      requestAnimationFrame(() => focusables(bg.querySelector('.vmodal'))[0]?.focus());
+    } else if (modalFocus.has(bg)) {
+      const origin = modalFocus.get(bg); modalFocus.delete(bg);
+      if (origin?.isConnected) requestAnimationFrame(() => origin.focus());
+    }
+  }).observe(bg, { attributes:true, attributeFilter:['class'] }));
+  new MutationObserver(() => {
+    const open = lbEl.classList.contains('on'); lbEl.setAttribute('aria-hidden', String(!open));
+    if (open) { lightboxFocus = document.activeElement; requestAnimationFrame(() => document.getElementById('lbcl').focus()); }
+    else if (lightboxFocus?.isConnected) { const origin = lightboxFocus; lightboxFocus = null; requestAnimationFrame(() => origin.focus()); }
+  }).observe(lbEl, { attributes:true, attributeFilter:['class'] });
+
+  document.addEventListener('keydown', event => {
+    const openModal = modalEls.find(bg => !bg.classList.contains('hide'));
+    if (openModal) {
+      trapFocus(event, openModal.querySelector('.vmodal'));
+      if (event.key === 'Escape') { event.preventDefault(); const cancel = openModal.querySelector('.vmodal-cancel'); cancel ? cancel.click() : openModal.classList.add('hide'); }
+      return;
+    }
+    if (lbEl.classList.contains('on')) { trapFocus(event, lbEl); return; }
+    if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
+      event.preventDefault(); srchEl.focus(); srchEl.select();
+    }
+    if (event.key === 'Escape') {
+      const menu = document.getElementById('scan-menu');
+      if (menu.classList.contains('on')) { document.getElementById('scan-toggle').click(); return; }
+      if (sbEl.classList.contains('on')) { sbEl.classList.remove('on'); ovEl.classList.remove('on'); document.getElementById('hb').focus(); }
+    }
+  }, true);
+  document.addEventListener('keydown', event => {
+    if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.c,.pgc')) {
+      event.preventDefault(); event.target.click();
+    }
+  });
+  document.addEventListener('click', () => requestAnimationFrame(syncNav));
+})();
+
+// ─────────────────────────────────────────────────────────────
+//  SEARCH + FILTER STATE
+// ─────────────────────────────────────────────────────────────
+(function initFilterExperience() {
+  const btn = document.getElementById('filter-btn');
+  const pop = document.getElementById('filter-pop');
+  const clear = document.getElementById('filter-clear');
+  const chips = document.getElementById('active-filters');
+  const names = { image:'Images', video:'Videos', gif:'GIFs', fav:'Favorites', recent:'Recently viewed', viewed:'Most viewed' };
+
+  window.renderFilterState = function renderFilterState() {
+    const active = [];
+    if (csearch) active.push({ key:'search', label:`Search: ${csearch}` });
+    if (ctype !== 'all') active.push({ key:'type', label:names[ctype] || ctype });
+    chips.innerHTML = '';
+    if (active.length) {
+      const label = document.createElement('span'); label.className = 'active-filter-label'; label.textContent = 'Showing:'; chips.appendChild(label);
+      active.forEach(filter => {
+        const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'filter-chip'; chip.dataset.removeFilter = filter.key;
+        chip.setAttribute('aria-label', `Remove ${filter.label} filter`); chip.innerHTML = `${filter.label} <b aria-hidden="true">×</b>`; chips.appendChild(chip);
+      });
+      const all = document.createElement('button'); all.type = 'button'; all.className = 'filter-chip-clear'; all.dataset.removeFilter = 'all'; all.textContent = 'Clear all'; chips.appendChild(all);
+      chips.classList.add('on');
+    } else chips.classList.remove('on');
+    btn.classList.toggle('has-filters', active.length > 0);
+    document.getElementById('filter-badge').textContent = active.length;
+    clear.disabled = !active.length;
+    pop.querySelectorAll('.filter-option').forEach(option => option.setAttribute('aria-pressed', String(option.dataset.filter === ctype)));
+  };
+  function closeFilter({ focus = false } = {}) { pop.classList.remove('on'); btn.setAttribute('aria-expanded', 'false'); if (focus) btn.focus(); }
+  function applyType(type) { closeFilter(); if (type !== ctype || viewMode !== 'gallery') setType(type, true); renderFilterState(); }
+  function clearAll() {
+    const changed = csearch || ctype !== 'all';
+    csearch = ''; srchEl.value = ''; srchEl.classList.remove('has-value'); document.getElementById('sw').classList.remove('active'); hideSugg();
+    if (ctype !== 'all' || viewMode !== 'gallery') setType('all'); else if (changed) fetchPage(true);
+    renderFilterState();
+  }
+  btn.addEventListener('click', e => { e.stopPropagation(); const opening = !pop.classList.contains('on'); pop.classList.toggle('on', opening); btn.setAttribute('aria-expanded', String(opening)); if (opening) requestAnimationFrame(() => pop.querySelector('.filter-option[aria-pressed="true"]')?.focus()); });
+  pop.addEventListener('click', e => { const option = e.target.closest('.filter-option'); if (option) applyType(option.dataset.filter); });
+  clear.addEventListener('click', clearAll);
+  chips.addEventListener('click', e => { const key = e.target.closest('[data-remove-filter]')?.dataset.removeFilter; if (!key) return; if (key === 'all') return clearAll(); if (key === 'search') { csearch = ''; srchEl.value = ''; srchEl.classList.remove('has-value'); document.getElementById('sw').classList.remove('active'); fetchPage(true); } else applyType('all'); renderFilterState(); });
+  empEl.addEventListener('click', e => { if (e.target.closest('[data-clear-filters="search"]')) { csearch=''; srchEl.value=''; srchEl.classList.remove('has-value'); document.getElementById('sw').classList.remove('active'); fetchPage(true); renderFilterState(); srchEl.focus(); } });
+  document.addEventListener('click', e => { if (!e.target.closest('.filter-wrap')) closeFilter(); });
+  document.addEventListener('keydown', e => { if (!pop.classList.contains('on')) return; if (e.key === 'Escape') { e.preventDefault(); closeFilter({ focus:true }); } });
+  // Existing search and type controls own fetching; synchronize visual state afterward.
+  srchEl.addEventListener('input', () => setTimeout(renderFilterState, 0));
+  document.querySelectorAll('.ft,.snb[data-t],.bnav-btn[data-t]').forEach(control => control.addEventListener('click', () => setTimeout(renderFilterState, 0)));
+  renderFilterState();
+})();
+
+// ─────────────────────────────────────────────────────────────
+//  CONSISTENT DESTRUCTIVE CONFIRMATION
+// ─────────────────────────────────────────────────────────────
+function confirmVault({ title, message, action = 'Delete' }) {
+  const bg = document.getElementById('confirm-bg');
+  const card = bg.querySelector('.confirm-card');
+  const cancel = bg.querySelector('.confirm-cancel');
+  const approve = bg.querySelector('.confirm-danger');
+  const origin = document.activeElement;
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-message').textContent = message;
+  approve.textContent = action;
+  bg.classList.add('on'); bg.setAttribute('aria-hidden', 'false');
+  return new Promise(resolve => {
+    const done = value => {
+      bg.classList.remove('on'); bg.setAttribute('aria-hidden', 'true');
+      document.removeEventListener('keydown', keys, true);
+      if (origin?.isConnected) origin.focus();
+      resolve(value);
+    };
+    const keys = event => {
+      if (event.key === 'Escape') { event.preventDefault(); done(false); }
+      if (event.key === 'Tab') {
+        event.preventDefault(); (document.activeElement === approve ? cancel : approve).focus();
+      }
+    };
+    cancel.onclick = () => done(false);
+    approve.onclick = () => done(true);
+    bg.onclick = e => { if (e.target === bg) done(false); };
+    document.addEventListener('keydown', keys, true);
+    requestAnimationFrame(() => approve.focus());
+  });
+}
 
 // ─────────────────────────────────────────────────────────────
 //  BOOT

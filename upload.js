@@ -1,369 +1,769 @@
+'use strict';
+
 const CONCURRENCY = 5;
+const allowed = /\.(jpg|jpeg|png|gif|webp|bmp|tiff|tif|avif|heic|svg|jfif|mp4|webm|ogg|mov|avi|mkv|m4v|flv|wmv|3gp)$/i;
 
-(function injectModal() {
-  const style = document.createElement('style');
-  style.textContent = `
-    #upl-backdrop {
-      position:fixed;inset:0;z-index:300;
-      background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);
-      display:flex;align-items:center;justify-content:center;
-      opacity:0;pointer-events:none;transition:opacity 0.2s;
-    }
-    #upl-backdrop.open{opacity:1;pointer-events:all;}
-    #upl-modal{
-      background:#111;width:min(600px,95vw);max-height:90vh;
-      border-radius:16px;display:flex;flex-direction:column;
-      transform:translateY(12px);transition:transform 0.2s;overflow:hidden;
-      border:1px solid #222;
-    }
-    #upl-backdrop.open #upl-modal{transform:translateY(0);}
-    #upl-header{
-      display:flex;justify-content:space-between;align-items:center;
-      padding:20px 24px 16px;border-bottom:1px solid #222;flex-shrink:0;
-    }
-    #upl-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;color:#f0f0f0;}
-    #upl-close{background:none;border:none;cursor:pointer;color:#888;font-size:20px;line-height:1;padding:4px;}
-    #upl-close:hover{color:#FF2B2B;}
-    #upl-drop{
-      margin:20px 24px 0;border:2px dashed #2a2a2a;border-radius:12px;
-      padding:32px 20px;text-align:center;cursor:pointer;
-      transition:border-color 0.2s,background 0.2s;flex-shrink:0;display:block;
-    }
-    #upl-drop.drag-over{border-color:#FF2B2B;background:rgba(255,43,43,0.04);}
-    #upl-drop-icon{font-size:32px;margin-bottom:10px;opacity:0.35;}
-    #upl-drop-label{font-size:13px;color:#777;font-family:'IBM Plex Mono',monospace;}
-    #upl-file-input{display:none;}
-    #upl-type-note{
-      text-align:center;font-size:10px;font-family:'IBM Plex Mono',monospace;
-      color:#444;margin:8px 24px 0;letter-spacing:0.05em;
-    }
-    #upl-overall{margin:16px 24px 0;display:none;flex-shrink:0;}
-    #upl-overall-row{
-      display:flex;justify-content:space-between;
-      font-size:11px;font-family:'IBM Plex Mono',monospace;color:#666;margin-bottom:6px;
-    }
-    #upl-overall-bar-track{height:4px;background:#222;border-radius:2px;overflow:hidden;}
-    #upl-overall-bar{height:100%;background:#FF2B2B;border-radius:2px;transition:width 0.2s;width:0%;}
-    #upl-queue{
-      flex:1;overflow-y:auto;padding:12px 24px;
-      display:flex;flex-direction:column;gap:8px;min-height:0;
-    }
-    #upl-queue::-webkit-scrollbar{width:4px;}
-    #upl-queue::-webkit-scrollbar-thumb{background:#333;border-radius:2px;}
-    .upl-item{
-      display:flex;align-items:center;gap:12px;
-      padding:10px 12px;border-radius:10px;background:#1a1a1a;transition:background 0.2s;
-    }
-    .upl-thumb{width:44px;height:44px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#2a2a2a;}
-    .upl-thumb.video-thumb{display:flex;align-items:center;justify-content:center;font-size:18px;color:#555;}
-    .upl-info{flex:1;min-width:0;}
-    .upl-name{
-      font-size:12px;font-weight:600;font-family:'IBM Plex Mono',monospace;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#ddd;
-    }
-    .upl-size{font-size:10px;color:#555;font-family:'IBM Plex Mono',monospace;margin-bottom:5px;}
-    .upl-bar-track{height:3px;background:#2a2a2a;border-radius:2px;overflow:hidden;}
-    .upl-bar{height:100%;border-radius:2px;background:#FF2B2B;width:0%;transition:width 0.1s linear;}
-    .upl-bar.done{background:#22c55e;width:100%!important;}
-    .upl-bar.error{background:#ef4444;width:100%!important;}
-    .upl-status{font-size:10px;font-family:'IBM Plex Mono',monospace;flex-shrink:0;min-width:48px;text-align:right;}
-    .upl-status.pending{color:#555;}
-    .upl-status.uploading{color:#FF2B2B;}
-    .upl-status.done{color:#22c55e;}
-    .upl-status.error{color:#ef4444;}
-    .upl-remove{background:none;border:none;cursor:pointer;color:#444;font-size:14px;padding:0 2px;flex-shrink:0;font-family:monospace;line-height:1;}
-    .upl-remove:hover{color:#FF2B2B;}
-    .upl-item.active .upl-remove{display:none;}
-    #upl-footer{
-      padding:16px 24px;border-top:1px solid #222;
-      display:flex;align-items:center;gap:12px;flex-shrink:0;
-    }
-    #upl-queue-count{font-size:11px;font-family:'IBM Plex Mono',monospace;color:#666;}
-    #upl-clear{
-      font-size:11px;font-family:'IBM Plex Mono',monospace;
-      color:#444;background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;
-    }
-    #upl-clear:hover{color:#FF2B2B;}
-    #upl-start{
-      background:#FF2B2B;color:white;border:none;border-radius:8px;
-      padding:10px 24px;font-family:'Space Grotesk',sans-serif;
-      font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;
-      cursor:pointer;transition:opacity 0.15s,transform 0.1s;margin-left:auto;
-    }
-    #upl-start:hover{opacity:0.88;}
-    #upl-start:active{transform:scale(0.97);}
-    #upl-start:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
-  `;
-  document.head.appendChild(style);
-
-  const backdrop = document.createElement('div');
-  backdrop.id = 'upl-backdrop';
-  backdrop.innerHTML = `
-    <div id="upl-modal" role="dialog" aria-modal="true">
-      <div id="upl-header">
-        <div id="upl-title">Upload Files</div>
-        <button id="upl-close" title="Close">✕</button>
-      </div>
-      <label id="upl-drop" for="upl-file-input">
-        <div id="upl-drop-icon">📁</div>
-        <div id="upl-drop-label">Tap to select or drag &amp; drop files here</div>
-        <input type="file" id="upl-file-input" multiple accept="image/*,video/*"/>
-      </label>
-      <div id="upl-type-note">JPG · PNG · WEBP · HEIC · GIF · MP4 · MOV · MKV · and more</div>
-      <div id="upl-overall">
-        <div id="upl-overall-row">
-          <span id="upl-overall-label">Uploading...</span>
-          <span id="upl-overall-pct">0%</span>
-        </div>
-        <div id="upl-overall-bar-track"><div id="upl-overall-bar"></div></div>
-      </div>
-      <div id="upl-queue"></div>
-      <div id="upl-footer">
-        <span id="upl-queue-count">No files selected</span>
-        <button id="upl-clear" style="display:none">Clear all</button>
-        <button id="upl-start" disabled>Upload</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(backdrop);
-
-  // Wire buttons
-  document.getElementById('upl-close').addEventListener('click', () => closeUploader());
-  document.getElementById('upl-clear').addEventListener('click', () => clearQueue());
-  document.getElementById('upl-start').addEventListener('click', () => startUpload());
-  backdrop.addEventListener('click', e => { if (e.target === backdrop) closeUploader(); });
-
-  // File input
-  document.getElementById('upl-file-input').addEventListener('change', function() {
-    if (!this.files || this.files.length === 0) return;
-    addFiles(Array.from(this.files));
-    this.value = '';
-  });
-
-  // Drag and drop on drop zone
-  const drop = document.getElementById('upl-drop');
-  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag-over'); });
-  drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
-  drop.addEventListener('drop', e => {
-    e.preventDefault();
-    drop.classList.remove('drag-over');
-    if (e.dataTransfer.files.length) addFiles(Array.from(e.dataTransfer.files));
-  });
-
-  // Drag onto whole page when modal open
-  document.addEventListener('dragover', e => { if (uploaderOpen) e.preventDefault(); });
-  document.addEventListener('drop', e => {
-    if (!uploaderOpen) return;
-    e.preventDefault();
-    if (e.dataTransfer.files.length) addFiles(Array.from(e.dataTransfer.files));
-  });
-
-  document.addEventListener('keydown', e => { if (uploaderOpen && e.key === 'Escape') closeUploader(); });
-})();
-
-// ── State ────────────────────────────────────────────────────
-let uploaderOpen = false;
 let queue = [];
 let uploading = false;
+let uploaderOpen = false;
+let uploadOrigin = null;
+
+(function () {
+    const s = document.createElement('style');
+
+    s.textContent = `
+        #upl-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            display: grid;
+            place-items: center;
+            background: #0009;
+            backdrop-filter: blur(6px);
+            opacity: 0;
+            pointer-events: none;
+            transition: .18s;
+        }
+
+        #upl-backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #upl-modal,
+        #upl-center {
+            background: var(--s2, #111);
+            border: 1px solid var(--br2, #333);
+            border-radius: 14px;
+            box-shadow: 0 18px 60px #0009;
+            color: var(--t, #eee);
+        }
+
+        #upl-modal {
+            width: min(610px, 94vw);
+            max-height: 84vh;
+            overflow: auto;
+        }
+
+        #upl-header,
+        #upl-footer,
+        .upl-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 18px;
+            border-bottom: 1px solid var(--br, #222);
+        }
+
+        #upl-footer {
+            border: 0;
+            border-top: 1px solid var(--br, #222);
+        }
+
+        #upl-title,
+        .upl-head strong {
+            flex: 1;
+            font: 700 15px 'Space Grotesk', sans-serif;
+        }
+
+        #upl-close,
+        .upl-action,
+        #upl-clear,
+        #upl-center button {
+            border: 0;
+            background: none;
+            color: var(--t2, #aaa);
+            cursor: pointer;
+            min-height: 38px;
+            padding: 0 9px;
+            border-radius: 7px;
+        }
+
+        #upl-drop {
+            display: block;
+            margin: 18px;
+            padding: 30px 16px;
+            text-align: center;
+            border: 2px dashed var(--br2, #333);
+            border-radius: 12px;
+            cursor: pointer;
+            font: 12px 'IBM Plex Mono', monospace;
+            color: var(--t2);
+        }
+
+        #upl-drop.drag {
+            border-color: var(--r);
+            background: var(--r2);
+        }
+
+        #upl-drop small {
+            display: block;
+            margin-top: 8px;
+            color: var(--t3);
+        }
+
+        #upl-file {
+            display: none;
+        }
+
+        #upl-queue {
+            padding: 0 18px 12px;
+            max-height: 320px;
+            overflow: auto;
+        }
+
+        .upl-item {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 9px;
+            border-radius: 9px;
+            background: var(--s3, #1a1a1a);
+            margin-top: 8px;
+        }
+
+        .upl-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .upl-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font: 600 11px 'IBM Plex Mono', monospace;
+        }
+
+        .upl-meta,
+        .upl-status {
+            font: 10px 'IBM Plex Mono', monospace;
+            color: var(--t3);
+        }
+
+        .upl-status {
+            min-width: 70px;
+            text-align: right;
+        }
+
+        .upl-status.error {
+            color: #ff7777;
+        }
+
+        .upl-status.done {
+            color: #7ddd9d;
+        }
+
+        .upl-bar {
+            height: 3px;
+            margin-top: 6px;
+            background: #fff2;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .upl-bar i {
+            display: block;
+            height: 100%;
+            background: var(--r);
+            transition: width .12s;
+        }
+
+        .upl-bar.done i {
+            background: #57c783;
+        }
+
+        #upl-start {
+            margin-left: auto;
+            min-height: 40px;
+            padding: 0 15px;
+            border: 0;
+            border-radius: 8px;
+            background: var(--r);
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        #upl-start:disabled {
+            opacity: .45;
+        }
+
+        #upl-footer-count {
+            flex: 1;
+            font: 10px 'IBM Plex Mono', monospace;
+            color: var(--t2);
+        }
+
+        #upl-center {
+            display: none;
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            z-index: 250;
+            width: min(350px, calc(100vw - 32px));
+            overflow: hidden;
+        }
+
+        #upl-center.on {
+            display: block;
+        }
+
+        .upl-progress {
+            height: 4px;
+            background: #fff2;
+        }
+
+        .upl-progress i {
+            display: block;
+            height: 100%;
+            background: var(--r);
+            transition: width .16s;
+        }
+
+        .upl-summary {
+            padding: 8px 12px;
+            font: 10px 'IBM Plex Mono', monospace;
+            color: var(--t3);
+        }
+
+        .upl-actions {
+            display: flex;
+            padding: 0 12px 10px;
+            gap: 7px;
+        }
+
+        .upl-actions button {
+            border: 1px solid var(--br2);
+            background: var(--s3);
+        }
+
+        @media (max-width: 640px) {
+            #upl-center {
+                right: 10px;
+                bottom: 70px;
+                width: calc(100vw - 20px);
+            }
+        }
+    `;
+
+    document.head.appendChild(s);
+
+    document.body.insertAdjacentHTML(
+        'beforeend',
+        `
+        <div id="upl-backdrop" aria-hidden="true">
+            <section
+                id="upl-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="upl-title"
+            >
+                <header id="upl-header">
+                    <h2 id="upl-title">Upload media</h2>
+
+                    <button
+                        id="upl-close"
+                        aria-label="Close upload dialog"
+                    >
+                        ×
+                    </button>
+                </header>
+
+                <label id="upl-drop" for="upl-file">
+                    ⇧ Choose files or drop media here
+
+                    <small>
+                        Images, GIFs and videos · multiple files supported
+                    </small>
+
+                    <input
+                        id="upl-file"
+                        type="file"
+                        multiple
+                        accept="image/*,video/*"
+                    >
+                </label>
+
+                <div
+                    id="upl-queue"
+                    aria-live="polite"
+                ></div>
+
+                <footer id="upl-footer">
+                    <span id="upl-footer-count">
+                        No files selected
+                    </span>
+
+                    <button id="upl-clear">
+                        Clear completed
+                    </button>
+
+                    <button id="upl-start" disabled>
+                        Upload
+                    </button>
+                </footer>
+            </section>
+        </div>
+
+        <aside
+            id="upl-center"
+            aria-live="polite"
+            aria-label="Upload Center"
+        >
+            <div class="upl-head">
+                <strong>Upload Center</strong>
+
+                <span
+                    id="upl-state"
+                    class="upl-status"
+                ></span>
+
+                <button
+                    id="upl-open"
+                    aria-label="Open upload details"
+                >
+                    ⌃
+                </button>
+            </div>
+
+            <div
+                class="upl-progress"
+                role="progressbar"
+                aria-label="Overall upload progress"
+                aria-valuemin="0"
+                aria-valuemax="100"
+            >
+                <i id="upl-totalbar"></i>
+            </div>
+
+            <div
+                id="upl-summary"
+                class="upl-summary"
+            ></div>
+
+            <div class="upl-actions">
+                <button id="upl-center-open">
+                    View details
+                </button>
+
+                <button id="upl-center-clear">
+                    Clear completed
+                </button>
+            </div>
+        </aside>
+        `
+    );
+
+    const drop = document.getElementById('upl-drop');
+
+    document.getElementById('upl-file').onchange = (e) => {
+        add([...e.target.files]);
+        e.target.value = '';
+    };
+
+    ['dragover', 'dragenter'].forEach((eventName) => {
+        drop.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            drop.classList.add('drag');
+        });
+    });
+
+    ['drop', 'dragleave'].forEach((eventName) => {
+        drop.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            drop.classList.remove('drag');
+        });
+    });
+
+    drop.addEventListener('drop', (e) => {
+        add([...e.dataTransfer.files]);
+    });
+
+    document.addEventListener('dragenter', (e) => {
+        if (e.dataTransfer?.types.includes('Files')) {
+            openUploader();
+        }
+    });
+
+    document.getElementById('upl-close').onclick = closeUploader;
+    document.getElementById('upl-start').onclick = start;
+    document.getElementById('upl-clear').onclick = clear;
+    document.getElementById('upl-open').onclick = openUploader;
+    document.getElementById('upl-center-open').onclick = openUploader;
+    document.getElementById('upl-center-clear').onclick = clear;
+
+    document.addEventListener('keydown', (e) => {
+        if (uploaderOpen && e.key === 'Escape') {
+            closeUploader();
+        }
+    });
+})();
+
 
 function openUploader() {
-  uploaderOpen = true;
-  document.getElementById('upl-backdrop').classList.add('open');
-  document.body.style.overflow = 'hidden';
+    uploadOrigin = document.activeElement;
+    uploaderOpen = true;
+
+    document
+        .getElementById('upl-backdrop')
+        .classList.add('open');
+
+    document
+        .getElementById('upl-backdrop')
+        .setAttribute('aria-hidden', 'false');
+
+    setTimeout(() => {
+        document.getElementById('upl-drop').focus();
+    }, 0);
 }
+
 
 function closeUploader() {
-  if (uploading) return;
-  uploaderOpen = false;
-  document.getElementById('upl-backdrop').classList.remove('open');
-  document.body.style.overflow = '';
+    uploaderOpen = false;
+
+    document
+        .getElementById('upl-backdrop')
+        .classList.remove('open');
+
+    document
+        .getElementById('upl-backdrop')
+        .setAttribute('aria-hidden', 'true');
+
+    uploadOrigin?.focus();
 }
 
-function formatBytes(b) {
-  if (b < 1024) return b + ' B';
-  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
-  return (b / (1024 * 1024)).toFixed(1) + ' MB';
-}
 
-function isVideo(file) {
-  return file.type.startsWith('video/');
-}
+function add(files) {
+    let bad = 0;
 
-function addFiles(files) {
-  const allowed = /\.(jpg|jpeg|png|gif|webp|bmp|tiff|tif|avif|heic|svg|jfif|mp4|webm|ogg|mov|avi|mkv|m4v|flv|wmv|3gp)$/i;
-  files.filter(f => allowed.test(f.name)).forEach(file => {
-    if (queue.find(q => q.file.name === file.name && q.file.size === file.size)) return;
-    const id = Math.random().toString(36).slice(2);
-    const item = { file, id, status: 'pending', progress: 0, barEl: null, statusEl: null };
-    queue.push(item);
-    renderQueueItem(item);
-  });
-  updateFooter();
-}
+    files.forEach((file) => {
+        if (!allowed.test(file.name)) {
+            bad++;
+            return;
+        }
 
-function renderQueueItem(item) {
-  const queueEl = document.getElementById('upl-queue');
-  const div = document.createElement('div');
-  div.className = 'upl-item';
-  div.id = 'upl-item-' + item.id;
+        const duplicate = queue.some(
+            (x) =>
+                x.file.name === file.name &&
+                x.file.size === file.size
+        );
 
-  if (isVideo(item.file)) {
-    div.innerHTML = `<div class="upl-thumb video-thumb">▶</div>`;
-  } else {
-    div.innerHTML = `<img class="upl-thumb" id="upl-thumb-${item.id}" src="" alt=""/>`;
-  }
+        if (!duplicate) {
+            queue.push({
+                file,
+                status: 'pending',
+                progress: 0,
+                error: '',
+                xhr: null
+            });
+        }
+    });
 
-  div.innerHTML += `
-    <div class="upl-info">
-      <div class="upl-name" title="${item.file.name}">${item.file.name}</div>
-      <div class="upl-size">${formatBytes(item.file.size)}</div>
-      <div class="upl-bar-track"><div class="upl-bar" id="upl-bar-${item.id}"></div></div>
-    </div>
-    <div class="upl-status pending" id="upl-status-${item.id}">queued</div>
-    <button class="upl-remove" title="Remove">✕</button>
-  `;
-
-  // ✅ item.id captured correctly in closure
-  div.querySelector('.upl-remove').addEventListener('click', () => removeFromQueue(item.id));
-
-  item.barEl    = div.querySelector('.upl-bar');
-  item.statusEl = div.querySelector('.upl-status');
-
-  queueEl.appendChild(div);
-
-  // Image preview
-  if (!isVideo(item.file)) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = div.querySelector('.upl-thumb');
-      if (img) img.src = e.target.result;
-    };
-    reader.readAsDataURL(item.file);
-  }
-}
-
-function removeFromQueue(id) {
-  queue = queue.filter(q => q.id !== id);
-  const el = document.getElementById('upl-item-' + id);
-  if (el) el.remove();
-  updateFooter();
-}
-
-function clearQueue() {
-  queue = queue.filter(q => q.status === 'uploading');
-  document.getElementById('upl-queue').innerHTML = '';
-  queue.forEach(item => renderQueueItem(item));
-  updateFooter();
-}
-
-function updateFooter() {
-  const total   = queue.length;
-  const done    = queue.filter(q => q.status === 'done').length;
-  const errored = queue.filter(q => q.status === 'error').length;
-  const pending = queue.filter(q => q.status === 'pending').length;
-
-  const countEl = document.getElementById('upl-queue-count');
-  if (total === 0) countEl.textContent = 'No files selected';
-  else if (uploading) countEl.textContent = `${done} / ${total} done${errored ? ` · ${errored} failed` : ''}`;
-  else countEl.textContent = `${total} file${total !== 1 ? 's' : ''} selected · ${formatBytes(queue.reduce((s, q) => s + q.file.size, 0))}`;
-
-  document.getElementById('upl-clear').style.display = total > 0 && !uploading ? 'block' : 'none';
-  document.getElementById('upl-start').disabled = pending === 0 || uploading;
-  document.getElementById('upl-start').textContent = uploading
-    ? 'Uploading...'
-    : `Upload ${pending > 0 ? pending + ' file' + (pending !== 1 ? 's' : '') : ''}`;
-}
-
-// ── Upload engine ─────────────────────────────────────────────
-async function startUpload() {
-  const pending = queue.filter(q => q.status === 'pending');
-  if (pending.length === 0) return;
-
-  uploading = true;
-  document.getElementById('upl-overall').style.display = 'block';
-  document.getElementById('upl-start').disabled = true;
-  document.getElementById('upl-close').style.opacity = '0.4';
-  document.getElementById('upl-close').style.pointerEvents = 'none';
-  updateFooter();
-
-  const total = pending.length;
-  let completed = 0;
-
-  function tick() {
-    completed++;
-    const pct = Math.round((completed / total) * 100);
-    document.getElementById('upl-overall-bar').style.width = pct + '%';
-    document.getElementById('upl-overall-pct').textContent = pct + '%';
-    document.getElementById('upl-overall-label').textContent = `${completed} / ${total} uploaded`;
-    updateFooter();
-  }
-
-  let idx = 0;
-  async function runWorker() {
-    while (idx < pending.length) {
-      const item = pending[idx++];
-      await uploadOne(item);
-      tick();
+    if (
+        bad &&
+        typeof showToast === 'function'
+    ) {
+        showToast(
+            `${bad} unsupported file${bad > 1 ? 's' : ''} skipped`,
+            'err'
+        );
     }
-  }
 
-  const workers = [];
-  for (let i = 0; i < Math.min(CONCURRENCY, pending.length); i++) workers.push(runWorker());
-  await Promise.all(workers);
-
-  uploading = false;
-  document.getElementById('upl-close').style.opacity = '';
-  document.getElementById('upl-close').style.pointerEvents = '';
-  document.getElementById('upl-start').textContent = 'Done ✓';
-  document.getElementById('upl-overall-label').textContent = `All ${total} file${total !== 1 ? 's' : ''} processed`;
-
-  if (typeof loadFiles === 'function') await loadFiles();
-  updateFooter();
+    render();
 }
 
-function uploadOne(item) {
-  return new Promise(resolve => {
-    item.status = 'uploading';
-    const itemEl = document.getElementById('upl-item-' + item.id);
-    if (itemEl) itemEl.classList.add('active');
-    if (item.statusEl) { item.statusEl.className = 'upl-status uploading'; item.statusEl.textContent = '0%'; }
 
-    const form = new FormData();
-    form.append('files', item.file, item.file.name);
+function render() {
+    const q = document.getElementById('upl-queue');
 
-    const xhr = new XMLHttpRequest();
+    q.innerHTML = '';
 
-    xhr.upload.addEventListener('progress', e => {
-      if (!e.lengthComputable) return;
-      const pct = Math.round((e.loaded / e.total) * 100);
-      if (item.barEl) item.barEl.style.width = pct + '%';
-      if (item.statusEl) item.statusEl.textContent = pct + '%';
+    queue.forEach((x) => {
+        const e = document.createElement('div');
+
+        e.className = 'upl-item';
+
+        e.innerHTML = `
+            <div class="upl-info">
+                <div class="upl-name">
+                    ${x.file.name}
+                </div>
+
+                <div class="upl-meta">
+                    ${Math.max(
+                        1,
+                        Math.round(x.file.size / 1024)
+                    )} KB
+                    ${x.error ? ' · Retry available' : ''}
+                </div>
+
+                <div class="upl-bar ${x.status}">
+                    <i style="width:${x.progress}%"></i>
+                </div>
+            </div>
+
+            <span class="upl-status ${x.status}">
+                ${
+                    x.status === 'uploading'
+                        ? `Uploading ${x.progress}%`
+                        : x.status === 'done'
+                            ? 'Completed'
+                            : x.status === 'error'
+                                ? 'Failed'
+                                : x.status === 'cancelled'
+                                    ? 'Cancelled'
+                                    : 'Waiting'
+                }
+            </span>
+
+            <button
+                class="upl-action"
+                aria-label="${
+                    x.status === 'error'
+                        ? 'Retry'
+                        : x.status === 'uploading'
+                            ? 'Cancel'
+                            : 'Remove'
+                } ${x.file.name}"
+            >
+                ${
+                    x.status === 'error'
+                        ? 'Retry'
+                        : x.status === 'uploading'
+                            ? 'Cancel'
+                            : '×'
+                }
+            </button>
+        `;
+
+        e.querySelector('button').onclick = () => {
+            if (x.status === 'error') {
+                x.status = 'pending';
+                x.progress = 0;
+                x.error = '';
+
+                render();
+                start();
+
+            } else if (x.status === 'uploading') {
+                x.xhr.abort();
+
+            } else {
+                queue = queue.filter((y) => y !== x);
+                render();
+            }
+        };
+
+        q.appendChild(e);
     });
 
-    xhr.addEventListener('load', () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        item.status = 'done';
-        if (item.barEl) item.barEl.classList.add('done');
-        if (item.statusEl) { item.statusEl.className = 'upl-status done'; item.statusEl.textContent = '✓'; }
-      } else {
-        let msg = 'failed';
-        try { msg = JSON.parse(xhr.responseText).error || 'failed'; } catch {}
-        item.status = 'error';
-        if (item.barEl) item.barEl.classList.add('error');
-        if (item.statusEl) { item.statusEl.className = 'upl-status error'; item.statusEl.textContent = '✕'; }
-        console.error('Upload failed:', item.file.name, msg);
-      }
-      resolve();
-    });
+    update();
+}
 
-    xhr.addEventListener('error', () => {
-      item.status = 'error';
-      if (item.barEl) item.barEl.classList.add('error');
-      if (item.statusEl) { item.statusEl.className = 'upl-status error'; item.statusEl.textContent = '✕'; }
-      resolve();
-    });
 
-    xhr.open('POST', '/api/upload');
-    xhr.send(form);
-  });
+function update() {
+    const d = queue.filter(
+        (x) => x.status === 'done'
+    ).length;
+
+    const a = queue.filter(
+        (x) => x.status === 'uploading'
+    ).length;
+
+    const p = queue.filter(
+        (x) => x.status === 'pending'
+    ).length;
+
+    const f = queue.filter(
+        (x) => x.status === 'error'
+    ).length;
+
+    const n = queue.length;
+
+    const percent = n
+        ? Math.round(
+            queue.reduce(
+                (sum, x) =>
+                    sum +
+                    (
+                        x.status === 'done' ||
+                        x.status === 'error' ||
+                        x.status === 'cancelled'
+                            ? 100
+                            : x.progress
+                    ),
+                0
+            ) / n
+        )
+        : 0;
+
+    document.getElementById(
+        'upl-footer-count'
+    ).textContent = n
+        ? `${d} complete · ${a} uploading · ${p} waiting${
+            f ? ` · ${f} failed` : ''
+        }`
+        : 'No files selected';
+
+    document.getElementById(
+        'upl-start'
+    ).disabled = !p || uploading;
+
+    document.getElementById(
+        'upl-center'
+    ).classList.toggle('on', !!n);
+
+    document.getElementById(
+        'upl-totalbar'
+    ).style.width = percent + '%';
+
+    document.getElementById(
+        'upl-summary'
+    ).textContent =
+        `${percent}% · ${d} complete · ${a} uploading · ${p} remaining${
+            f ? ` · ${f} failed` : ''
+        }`;
+
+    document.getElementById(
+        'upl-state'
+    ).textContent =
+        uploading
+            ? 'Uploading'
+            : f
+                ? 'Needs attention'
+                : d
+                    ? 'Complete'
+                    : 'Ready';
+}
+
+
+function clear() {
+    queue = queue.filter(
+        (x) =>
+            ![
+                'done',
+                'error',
+                'cancelled'
+            ].includes(x.status)
+    );
+
+    render();
+}
+
+
+async function start() {
+    if (uploading) return;
+
+    uploading = true;
+    update();
+    closeUploader();
+
+    let i = 0;
+
+    const work = queue.filter(
+        (x) => x.status === 'pending'
+    );
+
+    await Promise.all(
+        Array.from(
+            {
+                length: Math.min(
+                    CONCURRENCY,
+                    work.length
+                )
+            },
+            async () => {
+                while (i < work.length) {
+                    await one(work[i++]);
+                }
+            }
+        )
+    );
+
+    uploading = false;
+
+    render();
+
+    if (typeof loadFiles === 'function') {
+        await loadFiles();
+    }
+
+    if (typeof showToast === 'function') {
+        showToast(
+            `${queue.filter(
+                (x) => x.status === 'done'
+            ).length} upload(s) complete`,
+            'ok'
+        );
+    }
+}
+
+
+function one(x) {
+    return new Promise((ok) => {
+        x.status = 'uploading';
+
+        render();
+
+        const xhr = x.xhr = new XMLHttpRequest();
+        const fd = new FormData();
+
+        fd.append(
+            'files',
+            x.file,
+            x.file.name
+        );
+
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                x.progress = Math.round(
+                    (e.loaded / e.total) * 100
+                );
+
+                render();
+            }
+        };
+
+        xhr.onload = () => {
+            x.status =
+                xhr.status >= 200 &&
+                xhr.status < 300
+                    ? 'done'
+                    : 'error';
+
+            x.progress = 100;
+
+            x.error =
+                x.status === 'error'
+                    ? 'Upload was not accepted'
+                    : '';
+
+            x.xhr = null;
+
+            ok();
+        };
+
+        xhr.onerror = () => {
+            x.status = 'error';
+            x.progress = 100;
+            x.error = 'Network connection failed';
+            x.xhr = null;
+
+            ok();
+        };
+
+        xhr.onabort = () => {
+            x.status = 'cancelled';
+            x.xhr = null;
+
+            ok();
+        };
+
+        xhr.open(
+            'POST',
+            '/api/upload'
+        );
+
+        xhr.send(fd);
+    });
 }
