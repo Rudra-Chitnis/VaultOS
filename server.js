@@ -761,7 +761,22 @@ app.post('/api/upload', auth, (req, res) => {
 
   const saved = []; let pending = 0, finished = false;
   const tryDone = () => {
-    if (finished && !pending) { invalidateCache(); res.json({ ok: true, files: saved }); }
+    if (finished && !pending) {
+      invalidateCache();
+      res.json({ ok: true, files: saved });
+
+      // Upload completion is also a face-indexing trigger.  The upload path
+      // already enqueues the file for the worker; this second control message
+      // asks the worker to reconcile the real media directory and run one
+      // deterministic full clustering pass after the queue reaches idle.
+      // This makes automatic uploads behave like the explicit People → Scan
+      // action instead of relying on the IPC enqueue arriving at exactly the
+      // right worker lifecycle moment.
+      if (saved.length && faceWorker && faceWorker.connected) {
+        console.log(`[FACE:UPLOAD] Auto face scan triggered for ${saved.length} uploaded file(s)`, saved);
+        workerSend({ type: 'scan' });
+      }
+    }
   };
 
   bb.on('file', (_, file, info) => {
@@ -1246,10 +1261,17 @@ app.post('/api/faces/deduplicate', auth, async (req, res) => {
   }
 });
 
-// POST /api/faces/scan/start — start / resume background scan
+// POST /api/faces/scan/start — reconcile the filesystem, index new/changed media,
+// then run a full recluster once the scan queue has drained.  The worker owns
+// the face DB, filesystem reconciliation, and clustering lifecycle so this
+// endpoint is a single control message rather than a second implementation of
+// the scan pipeline in server.js.
 app.post('/api/faces/scan/start', auth, (req, res) => {
-  workerSend({ type: 'resume' });
-  res.json({ ok: true });
+  if (!faceWorker || !faceWorker.connected) {
+    return res.status(503).json({ error: 'face_worker_unavailable' });
+  }
+  workerSend({ type: 'scan' });
+  res.json({ ok: true, message: 'Face scan started' });
 });
 
 // POST /api/faces/scan/pause

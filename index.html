@@ -119,7 +119,8 @@ body::before{content:'';position:fixed;inset:0;
 
 /* Shared scroll chrome: collapsing flex items reclaims their actual layout
    height, while the small translate/opacity shift keeps the motion calm. */
-#tb,#fr,#active-filters,#st,#pph,#pp-progress{overflow:hidden;transition:max-height .2s ease,padding .2s ease,border-width .2s ease,opacity .14s ease,transform .2s ease}
+#tb,#fr,#active-filters,#pp-progress{overflow:hidden;transition:max-height .2s ease,padding .2s ease,border-width .2s ease,opacity .14s ease,transform .2s ease}
+#pph{overflow:visible;position:relative;z-index:80;min-height:0;transition:max-height .2s ease,padding .2s ease,border-width .2s ease,opacity .14s ease,transform .2s ease}
 #tb{max-height:72px}#fr{max-height:58px}#active-filters{max-height:56px}#st{max-height:36px}#pph{max-height:62px}#pp-progress{max-height:110px}
 #main.chrome-hidden #tb,#main.chrome-hidden #fr,#main.chrome-hidden #active-filters,#main.chrome-hidden #st,#main.chrome-hidden #pph,#main.chrome-hidden #pp-progress:not(.hide){max-height:0;padding-top:0;padding-bottom:0;border-bottom-width:0;opacity:0;transform:translateY(-8px);pointer-events:none}
 
@@ -213,14 +214,15 @@ body::before{content:'';position:fixed;inset:0;
 #lb{position:fixed;inset:0;z-index:200;background:rgba(4,4,14,.97);display:none;flex-direction:column}
 #lb.on{display:flex}
 /* Cinematic viewer header */
-#lbt{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:10px 14px;
+#lbt{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:10px 64px 10px 14px;
+  position:relative;
   background:linear-gradient(to bottom,rgba(4,4,14,.94) 0%,rgba(4,4,14,.7) 100%);
   backdrop-filter:blur(12px);
   border-bottom:1px solid rgba(255,255,255,.05);
 }
 #lbn{flex:1;font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(220,220,246,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.04em}
 #lbc{font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(190,190,220,.32);flex-shrink:0}
-#lbcl{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:rgba(220,220,246,.65);font-size:16px;cursor:pointer;padding:5px 9px;border-radius:7px;transition:all .15s;line-height:1}
+#lbcl{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:rgba(220,220,246,.65);font-size:16px;cursor:pointer;padding:5px 9px;border-radius:7px;transition:all .15s;line-height:1}
 #lbcl:hover{background:rgba(255,43,43,.25);border-color:rgba(255,43,43,.5);color:#fff}
 #lbpr{height:2px;background:rgba(255,255,255,.07);flex-shrink:0}
 #lbpf{height:100%;background:var(--r);width:0%;box-shadow:0 0 8px rgba(255,43,43,.5)}
@@ -333,14 +335,14 @@ body::before{content:'';position:fixed;inset:0;
 .cfa svg{width:9px;height:9px;opacity:.8}
 
 /* ── People page ── */
-#pp{display:none;flex:1;flex-direction:column;overflow:hidden}
+#pp{display:none;flex:1;flex-direction:column;overflow:hidden;position:relative;z-index:70;min-height:0}
 #pp.on{display:flex}
 #pph{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--glass);backdrop-filter:blur(16px);border-bottom:1px solid var(--br)}
 #ppback{background:none;border:none;color:var(--t2);font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;padding:4px 8px;border-radius:5px;display:none;transition:color .12s,background .12s}
 #ppback:hover{color:var(--r);background:var(--r2)}
 #ppback.on{display:block}
 #pptitle{font-size:13px;font-family:'IBM Plex Mono',monospace;color:var(--t2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#ppbody{flex:1;overflow-y:auto;padding:14px}
+#ppbody{flex:1;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;padding:14px}
 #ppbody::-webkit-scrollbar{width:3px}
 #ppbody::-webkit-scrollbar-thumb{background:var(--br2);border-radius:2px}
 #pggrid{position:relative;min-height:1px}
@@ -590,7 +592,7 @@ body::before{content:'';position:fixed;inset:0;
 .scan-toggle:hover,.scan-toggle.on{border-color:var(--r);color:var(--r)}
 .scan-arrow{font-size:8px;opacity:.6;transition:transform .15s}
 .scan-toggle.on .scan-arrow{transform:rotate(180deg)}
-.scan-menu{position:absolute;top:calc(100% + 5px);right:0;background:var(--s);border:1px solid var(--br2);border-radius:8px;padding:4px;min-width:170px;z-index:65;box-shadow:0 6px 24px rgba(0,0,0,.55);display:none;flex-direction:column}
+.scan-menu{position:absolute;top:calc(100% + 5px);right:0;background:var(--s);border:1px solid var(--br2);border-radius:8px;padding:4px;min-width:170px;z-index:500;box-shadow:0 6px 24px rgba(0,0,0,.55);display:none;flex-direction:column}
 .scan-menu.on{display:flex}
 .scan-item{background:none;border:none;color:var(--t2);font-size:11px;font-family:'IBM Plex Mono',monospace;cursor:pointer;text-align:left;padding:8px 11px;border-radius:5px;transition:background .1s,color .1s;white-space:nowrap;width:100%}
 .scan-item:hover{background:var(--s3);color:var(--t)}
@@ -2178,8 +2180,23 @@ document.getElementById('lbmw').addEventListener('mousemove', () => {
 });
 
 // Sync video events → update controls
+let _lbVideoResetting = false;
+function resetLightboxVideo() {
+  _lbVideoResetting = true;
+  try { lbvEl.pause(); } catch {}
+  lbvEl.removeAttribute('src');
+  try { lbvEl.load(); } catch {}
+  // Keep the guard alive through the browser's asynchronous media events.
+  setTimeout(() => { _lbVideoResetting = false; }, 100);
+}
 lbvEl.addEventListener('canplay', () => lbEl.setAttribute('aria-busy', 'false'));
-lbvEl.addEventListener('error', () => { lbEl.setAttribute('aria-busy', 'false'); showToast('This video could not be played.', 'err'); });
+lbvEl.addEventListener('error', () => {
+  lbEl.setAttribute('aria-busy', 'false');
+  // Clearing a <video> by setting src='' can itself emit `error`. That is
+  // cleanup, not a playback failure, and must never produce a user-facing toast.
+  if (_lbVideoResetting || !lbvEl.currentSrc) return;
+  showToast('This video could not be played.', 'err');
+});
 lbiEl.addEventListener('load', () => lbEl.setAttribute('aria-busy', 'false'));
 lbiEl.addEventListener('error', () => { lbEl.setAttribute('aria-busy', 'false'); lbiEl.removeAttribute('src'); showToast('This image could not be loaded.', 'err'); });
 lbvEl.addEventListener('play',  () => { vpcShow(true); });
@@ -2215,7 +2232,7 @@ function closeLB() {
   lbEl.classList.remove('on');
   lbEl.classList.remove('assign-open'); // ensure dim/block state is always cleared
   vpcDispose();
-  lbvEl.pause(); lbvEl.src = ''; lbvEl.style.display = 'none'; lbiEl.style.display = 'none';
+  resetLightboxVideo(); lbvEl.style.display = 'none'; lbiEl.style.display = 'none';
   clearFaceOverlay();
   document.body.style.overflow = '';
   _lbCtx = null; // exit cluster context
@@ -2230,7 +2247,7 @@ function showLB() {
   recordMediaView(it);
   lbnEl.textContent=it.name;
   lbcEl.textContent=`${_idx+1}/${_items.length}`;
-  lbvEl.pause(); lbvEl.style.display='none'; lbiEl.style.display='none';
+  resetLightboxVideo(); lbvEl.style.display='none'; lbiEl.style.display='none';
   vpcDispose();
   clearFaceOverlay();
   // Show/hide gallery nav arrows based on media type
@@ -2239,6 +2256,7 @@ function showLB() {
   document.getElementById('lbnx').style.display = navStyle;
 
   if (it.type==='video') {
+    _lbVideoResetting = false;
     lbEl.setAttribute('aria-busy', 'true');
     lbvEl.src=it.url;
     lbvEl.style.display='block';
@@ -2460,8 +2478,12 @@ function showPeopleView() {
   sbEl.classList.remove('on'); ovEl.classList.remove('on');
   document.getElementById('ppback').classList.remove('on');
   document.getElementById('pptitle').textContent = 'People';
-  // Reset detail state
+  // Reset detail state and invalidate any in-flight person-media request.
+  pdLoadGeneration++;
+  pdLoading = false;
   pdPersonId = null; _curPerson = null;
+  pdItems = [];
+  clearPersonMediaGrid();
   if (typeof pdActEl !== 'undefined') pdActEl.classList.remove('on');
   if (ppSortWrapEl) ppSortWrapEl.classList.remove('off');
   // Immediately show fresh status then load grid (or filtered grid if search active)
@@ -2754,6 +2776,7 @@ let pdMore     = true;
 let pdPage     = 0;
 let pdPersonId = null;
 let pdItems    = [];  // flat list of media items for current person — used by cluster-aware lightbox
+let pdLoadGeneration = 0; // invalidates in-flight detail fetches when leaving/changing person
 
 // Person media uses the same layout modes and measurements as All Media.  The
 // data source is different, but the cards, dimensions, spacing, and preview
@@ -2836,6 +2859,8 @@ async function openPersonDetail(personOrId, legacyName) {
     ? personOrId
     : { id: personOrId, name: legacyName || null, faceCount: 0, coverThumb: null };
 
+  // Invalidate any previous detail request before switching person context.
+  pdLoadGeneration++;
   pdPersonId = person.id;
   setChromeHidden(false);
   ppbodyEl.classList.remove('people-overview');
@@ -2866,7 +2891,9 @@ async function openPersonDetail(personOrId, legacyName) {
 }
 
 async function loadPersonMedia(reset = false) {
-  if (pdLoading || !pdMore) return;
+  if (pdLoading || !pdMore || pdPersonId === null) return;
+  const requestGeneration = pdLoadGeneration;
+  const requestPersonId = pdPersonId;
   pdLoading = true;
   ppspEl.classList.add('on');
 
@@ -2878,8 +2905,11 @@ async function loadPersonMedia(reset = false) {
   }
 
   try {
-    const r = await fetch(`/api/faces/persons/${pdPersonId}/media?limit=60&page=${pdPage}`);
+    const r = await fetch(`/api/faces/persons/${requestPersonId}/media?limit=60&page=${pdPage}`);
     if (r.status === 401) { location.href = '/login.html'; return; }
+    // Back/navigation may have happened while the request was in flight.
+    // Never let stale detail data repopulate the People overview grid.
+    if (requestGeneration !== pdLoadGeneration || pdPersonId !== requestPersonId) return;
     if (!r.ok) {
       ppemptyEl.style.display = 'flex';
       ppemptyEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:32px;height:32px;opacity:.25"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Error loading person media (${r.status}).`;
@@ -2907,11 +2937,14 @@ async function loadPersonMedia(reset = false) {
     }
   } catch (e) {
     console.error('[personMedia] fetch failed:', e);
+    if (requestGeneration !== pdLoadGeneration || pdPersonId !== requestPersonId) return;
     ppemptyEl.style.display = 'flex';
     ppemptyEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:32px;height:32px;opacity:.25"><circle cx="12" cy="12" r="10"/></svg>Failed to load media.`;
   } finally {
-    pdLoading = false;
-    ppspEl.classList.remove('on');
+    if (requestGeneration === pdLoadGeneration) {
+      pdLoading = false;
+      ppspEl.classList.remove('on');
+    }
   }
 }
 
@@ -3031,9 +3064,15 @@ ppbodyEl.addEventListener('scroll', () => {
 
 // ── Back button ──────────────────────────────────────────────
 function goBackToPeopleList() {
+  // Invalidate any in-flight person-media request before changing the DOM.
+  pdLoadGeneration++;
+  pdLoading = false;
+  clearPersonMediaGrid();
+
   pdPersonId = null;
   _curPerson = null;
   pdItems    = [];
+  setChromeHidden(false);
   ppbodyEl.classList.add('people-overview');
   ppbodyEl.removeAttribute('data-layout');
   updatePersonContext(null);
@@ -3042,12 +3081,17 @@ function goBackToPeopleList() {
   document.getElementById('pptitle').textContent = 'People';
   pdActEl.classList.remove('on');
   if (ppSortWrapEl) ppSortWrapEl.classList.remove('off');
-  // Reset search to people mode
   srchEl.placeholder = 'Search people…';
-  // If search was active while in person detail, clear it and reload full list
+
+  // Rebuild the list after the detail grid has been synchronously torn down.
+  // Restore the saved People-list scroll only after the new list is ready.
+  const listPos = scrollState['people_list'] || 0;
   const q = srchEl.value.trim();
-  if (q) loadPeopleFiltered(q);
-  else   loadPeople(true);
+  const reload = q ? loadPeopleFiltered(q) : loadPeople(true);
+  Promise.resolve(reload).then(() => {
+    if (viewMode !== 'people' || pdPersonId !== null) return;
+    requestAnimationFrame(() => { ppbodyEl.scrollTop = listPos; });
+  });
 }
 
 document.getElementById('ppback').addEventListener('click', () => {
@@ -3326,19 +3370,20 @@ let _lastState     = null;
 let _autoRefreshTimer = null;
 
 const STATE_LABELS = {
-  RUNNING:       'Indexing…',
-  IDLE:          'Index ready',
-  PAUSED:        'Paused',
-  INITIALIZING:  'Initializing…',
-  MODELS_MISSING:'Models missing',
-  SHUTTING_DOWN: 'Shutting down',
+  running:       'Indexing…',
+  idle:          'Index ready',
+  paused:        'Paused',
+  initializing:  'Initializing…',
+  service_wait:  'Waiting for AI service…',
+  models_missing:'Models missing',
+  shutting_down: 'Shutting down',
   unavailable:   'Connecting…',
   db_initializing: 'Connecting…',
 };
 const STATE_DOT = {
-  RUNNING: 'run', IDLE: 'ok', PAUSED: 'warn',
-  INITIALIZING: 'run', MODELS_MISSING: 'warn',
-  SHUTTING_DOWN: 'warn', unavailable: 'err',
+  running: 'run', idle: 'ok', paused: 'warn',
+  initializing: 'run', service_wait: 'run', models_missing: 'warn',
+  shutting_down: 'warn', unavailable: 'err',
 };
 
 function fmtEta(seconds) {
@@ -3358,10 +3403,11 @@ function fmtNum(n) {
 function updateProgressPanel(d) {
   if (!ppProgEl) return;
 
-  const state = d.state || 'unavailable';
-  const isRunning = state === 'RUNNING';
-  const isIdle    = state === 'IDLE';
-  const isOk      = isRunning || isIdle || state === 'PAUSED';
+  const state = String(d.state || 'unavailable').toLowerCase();
+  const isRunning = state === 'running';
+  const isIdle    = state === 'idle' || (state === 'running' && !(d.queued || d.processing));
+  const isPaused  = state === 'paused';
+  const isOk      = isRunning || isIdle || isPaused;
 
   // Show/hide panel: hide only when completely unavailable and no data at all
   const hasData = d.personCount != null || d.faceCount != null || d.queued != null;
@@ -3382,7 +3428,7 @@ function updateProgressPanel(d) {
   ppProgFill.style.width = pct + '%';
 
   // ETA calculation — reset counters on state transitions
-  if (isRunning && _lastState !== 'RUNNING') {
+  if (isRunning && _lastState !== 'running') {
     _scanStartTime = Date.now();
     _scanStartDone = done;
   }
@@ -3401,9 +3447,9 @@ function updateProgressPanel(d) {
 
   // Label
   let label;
-  if (state === 'RUNNING') {
+  if (isRunning && !isIdle) {
     label = `Indexing — ${fmtNum(done)} / ${fmtNum(total)} files`;
-  } else if (state === 'IDLE') {
+  } else if (isIdle) {
     label = d.personCount != null
       ? `${fmtNum(d.personCount)} people · ${fmtNum(d.faceCount || 0)} faces`
       : 'Index ready';
@@ -3450,10 +3496,11 @@ async function pollFaceStatus() {
     faceStDot.classList.add(STATE_DOT[d.state] || 'idle');
 
     let label = STATE_LABELS[d.state] || d.state;
-    if (d.state === 'RUNNING' && d.queued != null) {
-      label = `Indexing… (${d.queued} queued)`;
+    const state = String(d.state || 'unavailable').toLowerCase();
+    if (state === 'running' && (d.queued || d.processing)) {
+      label = `Indexing… (${d.queued || 0} queued)`;
     }
-    if (d.personCount != null && d.state === 'IDLE') {
+    if (d.personCount != null && (state === 'idle' || (state === 'running' && !(d.queued || d.processing)))) {
       label = `${d.personCount} people · ${d.faceCount || 0} faces`;
     }
     faceStTxt.textContent = label;
@@ -3773,19 +3820,6 @@ function restoreScroll(key) {
     if (!key.startsWith('people')) renderGrid();
   });
 }
-
-// Save people detail scroll when going Back; restore people_list scroll
-// Capture phase fires before the existing ppback click handler
-document.getElementById('ppback').addEventListener('click', () => {
-  saveScroll();
-  const listPos = scrollState['people_list'] || 0;
-  const _check = setInterval(() => {
-    if (!ppLoading) {
-      clearInterval(_check);
-      requestAnimationFrame(() => { ppbodyEl.scrollTop = listPos; });
-    }
-  }, 80);
-}, true);
 
 // ─────────────────────────────────────────────────────────────
 //  VIDEO / GIF AUTOPLAY PREVIEWS — IntersectionObserver

@@ -477,6 +477,7 @@ function deduplicateVideoFaces(allFaces, simThresh = 0.68) {
  * @returns {{ faceId, personId }}
  */
 async function saveFace(mediaId, face, frameMs, origFilePath) {
+  let faceId = null;
   try {
     // ── 1. Generate thumbnail ─────────────────────────────────────────────
     const thumbBuf = await makeFaceThumb(face, origFilePath);
@@ -485,7 +486,7 @@ async function saveFace(mediaId, face, frameMs, origFilePath) {
     fs.writeFileSync(tmpPath, thumbBuf);
 
     // ── 2. Insert face row (gets auto-assigned ID) ─────────────────────────
-    const faceId = await dbModule.insertFace(db, {
+    faceId = await dbModule.insertFace(db, {
       mediaId,
       frameMs,
       detScore:  face.score,
@@ -504,13 +505,82 @@ async function saveFace(mediaId, face, frameMs, origFilePath) {
     await db.run('UPDATE faces SET thumb_path = ? WHERE id = ?', faceThumbRelPath(faceId), faceId);
 
     // ── 4. Incremental cluster assignment ─────────────────────────────────
-    const personId = await assignFace(db, faceId, face.embedding);
+    // The face row is already durable at this point.  If the in-memory
+    // centroid cache is stale because another process changed the persons
+    // table, refresh it and retry once before giving up.  Previously the
+    // assignment error was swallowed here, causing the media row to be marked
+    // "done" while the face silently remained unassigned.
+    let personId;
+    try {
+      personId = await assignFace(db, faceId, face.embedding);
+    } catch (firstErr) {
+      invalidateCentroidCache();
+      log.warn('Incremental assignment failed — refreshing centroid cache and retrying', {
+        mediaId, frameMs, faceId, error: firstErr.message,
+      });
+      try {
+        personId = await assignFace(db, faceId, face.embedding);
+      } catch (secondErr) {
+        // Last-resort product guarantee: a successfully detected/stored face
+        // must never disappear merely because incremental centroid matching
+        // failed. Create a singleton person so the face remains visible in
+        // People; a later full recluster can merge it into the correct cluster.
+        invalidateCentroidCache();
+        log.error('Incremental assignment retry failed — creating singleton person', {
+          mediaId, frameMs, faceId, error: secondErr.message,
+        });
+        personId = await dbModule.createPerson(db, faceId, f32ToBlob(face.embedding));
+      }
+    }
 
     return { faceId, personId };
   } catch (err) {
-    log.warn('saveFace error', { mediaId, frameMs, error: err.message });
-    return { faceId: null, personId: null };
+    log.error('saveFace error', { mediaId, frameMs, faceId, error: err.message });
+    // Preserve the durable face row if insertion already succeeded. The caller
+    // counts actual rows rather than trusting the detector count.
+    return { faceId, personId: null };
   }
+}
+
+/**
+ * Repair faces that were successfully indexed but are still unassigned.
+ * This is deliberately separate from detection: assignment can be retried
+ * without re-running InsightFace/FFmpeg. `not_this_person` feedback is treated
+ * as an explicit user choice and is therefore excluded.
+ */
+async function repairUnassignedFaces(mediaId = null) {
+  const params = [];
+  let sql = `SELECT f.id, f.embedding
+             FROM faces f
+             WHERE f.person_id IS NULL AND f.embedding IS NOT NULL
+               AND NOT EXISTS (
+                 SELECT 1 FROM face_feedback ff
+                 WHERE ff.face_id = f.id AND ff.action = 'not_this_person'
+               )`;
+  if (mediaId != null) {
+    sql += ' AND f.media_id = ?';
+    params.push(mediaId);
+  }
+  sql += ' ORDER BY f.id ASC';
+
+  const rows = await db.all(sql, ...params);
+  let repaired = 0;
+  for (const row of rows) {
+    try {
+      const personId = await assignFace(db, row.id, blobToF32(row.embedding));
+      if (personId != null) repaired++;
+    } catch (firstErr) {
+      invalidateCentroidCache();
+      try {
+        const personId = await assignFace(db, row.id, blobToF32(row.embedding));
+        if (personId != null) repaired++;
+      } catch (secondErr) {
+        log.error('Unable to repair unassigned face', { faceId: row.id, error: secondErr.message });
+      }
+    }
+  }
+  if (repaired) log.info('Repaired unassigned faces', { mediaId, repaired, candidates: rows.length });
+  return repaired;
 }
 
 async function clearExistingFaces(mediaId) {
@@ -575,13 +645,16 @@ async function processImage(filename) {
   t.end({ file: filename, faces: faces.length });
 
   const personIds = [];
+  let savedFaces = 0;
   for (const face of faces) {
-    const { personId } = await saveFace(mediaId, face, 0, filePath);
+    const { faceId, personId } = await saveFace(mediaId, face, 0, filePath);
+    if (faceId != null) savedFaces++;
     if (personId != null) personIds.push(personId);
   }
+  await repairUnassignedFaces(mediaId);
 
-  await dbModule.finaliseMedia(db, mediaId, faces.length, 'done');
-  return { faces: faces.length, personIds };
+  await dbModule.finaliseMedia(db, mediaId, savedFaces, 'done');
+  return { faces: savedFaces, personIds };
 }
 
 async function processVideo(filename) {
@@ -625,13 +698,16 @@ async function processVideo(filename) {
   log.info('Video faces', { filename, raw: allFaces.length, unique: unique.length });
 
   const personIds = [];
+  let savedFaces = 0;
   for (const { face, frameMs } of unique) {
-    const { personId } = await saveFace(mediaId, face, frameMs, filePath);
+    const { faceId, personId } = await saveFace(mediaId, face, frameMs, filePath);
+    if (faceId != null) savedFaces++;
     if (personId != null) personIds.push(personId);
   }
+  await repairUnassignedFaces(mediaId);
 
-  await dbModule.finaliseMedia(db, mediaId, unique.length, 'done');
-  return { faces: unique.length, personIds };
+  await dbModule.finaliseMedia(db, mediaId, savedFaces, 'done');
+  return { faces: savedFaces, personIds };
 }
 
 async function processGif(filename) {
@@ -681,13 +757,16 @@ async function processGif(filename) {
   log.info('GIF faces', { filename, raw: allFaces.length, unique: unique.length });
 
   const personIds = [];
+  let savedFaces = 0;
   for (const { face, frameMs } of unique) {
-    const { personId } = await saveFace(mediaId, face, frameMs, filePath);
+    const { faceId, personId } = await saveFace(mediaId, face, frameMs, filePath);
+    if (faceId != null) savedFaces++;
     if (personId != null) personIds.push(personId);
   }
+  await repairUnassignedFaces(mediaId);
 
-  await dbModule.finaliseMedia(db, mediaId, unique.length, 'done');
-  return { faces: unique.length, personIds };
+  await dbModule.finaliseMedia(db, mediaId, savedFaces, 'done');
+  return { faces: savedFaces, personIds };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -772,6 +851,88 @@ async function drain() {
     }
   } finally {
     draining = false;
+  }
+}
+
+/**
+ * Wait until the persistent scan queue has no queued/processing rows.
+ * drain() deliberately returns after dispatching work, so callers that need
+ * a reliable "scan finished" boundary must wait for the DB state as well.
+ */
+async function waitForQueueIdle(timeoutMs = 15 * 60 * 1000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const row = await db.get(`
+      SELECT
+        SUM(CASE WHEN status = 'queued' THEN 1 ELSE 0 END) AS queued,
+        SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) AS processing
+      FROM scan_queue
+    `);
+    const queued = Number(row?.queued || 0);
+    const processing = Number(row?.processing || 0);
+    if (queued === 0 && processing === 0 && activeJobs === 0) return true;
+
+    if (state !== STATES.RUNNING) return false;
+    drain().catch(e => log.error('waitForQueueIdle drain error', { error: e.message }));
+    await sleep(250);
+  }
+  return false;
+}
+
+let scanInProgress = false;
+
+/**
+ * Explicit user scan:
+ *   1. Reconcile the actual media directory (including files added outside
+ *      the upload endpoint).
+ *   2. Run the normal worker queue.
+ *   3. Once all indexing work is finished, perform one HDBSCAN recluster.
+ *
+ * The recluster is intentionally at the end of the explicit Scan operation.
+ * That gives newly-created face rows a deterministic clustering pass even if
+ * incremental assignment was unable to attach one of them.
+ */
+async function handleScan() {
+  if (scanInProgress) {
+    log.info('Scan request ignored — a scan is already in progress');
+    return;
+  }
+  if (!db || state === STATES.INITIALIZING || state === STATES.SERVICE_WAIT ||
+      state === STATES.SHUTTING_DOWN) {
+    log.warn('Scan request ignored — worker is not ready', { state });
+    return;
+  }
+
+  scanInProgress = true;
+  try {
+    const existingFilenames = await reconcileMediaDirectory();
+    if (!existingFilenames) {
+      log.error('Explicit scan aborted — media directory could not be reconciled');
+      return;
+    }
+
+    // A paused worker is explicitly resumed by the Scan command.  RUNNING is
+    // already the normal state; setting it again is harmless and guarantees
+    // that a paused worker can consume the newly reconciled queue.
+    if (state === STATES.PAUSED) {
+      setState(STATES.RUNNING);
+      await db.run("INSERT OR REPLACE INTO index_meta (key, value) VALUES ('worker_state', 'running')");
+    }
+
+    drain().catch(e => log.error('Scan drain error', { error: e.message }));
+    const idle = await waitForQueueIdle();
+    if (!idle) {
+      log.warn('Scan did not reach a clean queue-idle boundary', { state, activeJobs });
+      return;
+    }
+
+    if (state === STATES.RUNNING) {
+      await handleCluster();
+    }
+  } catch (err) {
+    log.error('Explicit scan failed', { error: err.message, stack: err.stack });
+  } finally {
+    scanInProgress = false;
   }
 }
 
@@ -905,11 +1066,18 @@ async function handlePause() {
 }
 
 async function handleResume() {
-  if (state !== STATES.PAUSED) return;
-  setState(STATES.RUNNING);
-  await db.run("INSERT OR REPLACE INTO index_meta (key, value) VALUES ('worker_state', 'running')");
-  log.info('Resumed');
-  drain().catch(e => log.error('Resume drain error', { error: e.message }));
+  if (state === STATES.PAUSED) {
+    setState(STATES.RUNNING);
+    await db.run("INSERT OR REPLACE INTO index_meta (key, value) VALUES ('worker_state', 'running')");
+    log.info('Resumed');
+  }
+
+  // The server's existing /api/faces/scan/start control message is `resume`.
+  // A scan must reconcile the filesystem even when the worker is already
+  // running; the old early-return made the button a no-op in that normal case.
+  if (state === STATES.RUNNING) {
+    handleScan().catch(e => log.error('Resume/scan error', { error: e.message }));
+  }
 }
 
 async function handleRescan(msg) {
@@ -943,7 +1111,12 @@ async function handleCluster() {
   log.info('Full HDBSCAN recluster requested');
   try {
     const result = await withWriteLock(() => fullReclusterPython(db, dbPath, PYTHON_URL));
-    send({ type: 'cluster_done', persons: result.persons, facesAssigned: result.facesAssigned });
+    // HDBSCAN intentionally labels isolated faces as noise. VaultOS, however,
+    // promises that every detected face is represented in People unless the
+    // user explicitly rejected it. Convert remaining noise/orphans into
+    // singleton people; future scans/reclusters can merge those people.
+    const repaired = await repairUnassignedFaces();
+    send({ type: 'cluster_done', persons: result.persons, facesAssigned: result.facesAssigned + repaired, repaired });
   } catch (err) {
     log.error('Full recluster failed', { error: err.message });
   }
@@ -1045,6 +1218,7 @@ process.on('message', (msg) => {
   switch (msg.type) {
     case 'init':       handleInit(msg).catch(e => log.error('handleInit error',   { error: e.message })); break;
     case 'enqueue':    handleEnqueue(msg).catch(e => log.error('handleEnqueue',   { error: e.message })); break;
+    case 'scan':       handleScan().catch(e => log.error('handleScan',             { error: e.message })); break;
     case 'pause':      handlePause().catch(e => log.error('handlePause',          { error: e.message })); break;
     case 'resume':     handleResume().catch(e => log.error('handleResume',        { error: e.message })); break;
     case 'rescan':     handleRescan(msg).catch(e => log.error('handleRescan',     { error: e.message })); break;
