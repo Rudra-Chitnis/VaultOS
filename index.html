@@ -1241,6 +1241,7 @@ html[data-theme="light"] #ppbody.people-overview .pgav::after{background:linear-
 @media(min-width:641px){#hb{display:none}}
 @media(max-width:640px){
   #pph{flex-wrap:wrap;gap:8px;padding:8px 12px}
+  #pph:has(#pd-actions.on){max-height:116px}
   #ppback.on{min-height:42px;padding-inline:10px}
   #pp-sort-wrap{margin-left:auto;padding-left:9px}
   #scan-wrap{margin-left:0}
@@ -2954,6 +2955,13 @@ document.addEventListener('keydown', e => {
     if (exitViewerFullscreen()) { e.preventDefault(); return; }
     closeLB(); return;
   }
+
+  // Keep the viewer shortcuts out of text fields and native controls in
+  // overlays (for example, the person assignment search) so normal typing,
+  // range adjustment, and button activation keep their browser behavior.
+  if (e.isComposing || e.target.closest?.(
+    'input,textarea,select,button,a[href],[contenteditable]:not([contenteditable="false"]),[role="textbox"],[role="slider"],[role="button"]'
+  )) return;
 
   if (isVideo) {
     // Video-specific shortcuts — prevent gallery navigation conflicts
@@ -4948,7 +4956,12 @@ const previewObserver = new IntersectionObserver((entries) => {
     const openModal = modalEls.find(bg => !bg.classList.contains('hide'));
     if (openModal) {
       trapFocus(event, openModal.querySelector('.vmodal'));
-      if (event.key === 'Escape') { event.preventDefault(); const cancel = openModal.querySelector('.vmodal-cancel'); cancel ? cancel.click() : openModal.classList.add('hide'); }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        const cancel = openModal.querySelector('.vmodal-cancel');
+        cancel ? cancel.click() : openModal.classList.add('hide');
+        event.stopPropagation();
+      }
       return;
     }
     if (lbEl.classList.contains('on')) { trapFocus(event, lbEl); return; }
