@@ -211,48 +211,49 @@ body::before{content:'';position:fixed;inset:0;
 .empty-clear{min-height:38px;padding:7px 12px;border:1px solid rgba(255,43,43,.45);border-radius:8px;background:var(--r2);color:var(--t);font:11px 'IBM Plex Mono',monospace;cursor:pointer}
 
 /* ── Lightbox ── */
-#lb{position:fixed;inset:0;z-index:200;background:rgba(4,4,14,.97);display:none;flex-direction:column}
+#lb{position:fixed;inset:0;z-index:200;background:#08090d;display:none;flex-direction:column;overflow:hidden;color:var(--text-1);isolation:isolate}
 #lb.on{display:flex}
 /* Cinematic viewer header */
-#lbt{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:10px 64px 10px 14px;
-  position:relative;
-  background:linear-gradient(to bottom,rgba(4,4,14,.94) 0%,rgba(4,4,14,.7) 100%);
-  backdrop-filter:blur(12px);
-  border-bottom:1px solid rgba(255,255,255,.05);
+#lbt{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:12px 70px 12px 22px;
+  position:absolute;z-index:20;top:0;left:0;right:0;min-height:58px;
+  background:linear-gradient(to bottom,rgba(8,9,13,.82),rgba(8,9,13,.34) 72%,transparent);
+  transition:opacity var(--motion-normal) var(--ease-standard),transform var(--motion-normal) var(--ease-standard);
 }
-#lbn{flex:1;font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(220,220,246,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.04em}
-#lbc{font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(190,190,220,.32);flex-shrink:0}
-#lbcl{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:rgba(220,220,246,.65);font-size:16px;cursor:pointer;padding:5px 9px;border-radius:7px;transition:all .15s;line-height:1}
+#lbn{flex:1;font:500 13px/1.35 var(--font-ui);color:rgba(244,244,248,.86);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0}
+#lbc{font:11px var(--font-meta);color:rgba(220,220,230,.58);flex-shrink:0}
+#lbmeta{font:10px var(--font-meta);color:rgba(220,220,230,.48);white-space:nowrap;flex-shrink:0}
+#lbcl{position:absolute;right:18px;top:50%;transform:translateY(-50%);background:rgba(25,26,31,.52);border:1px solid rgba(255,255,255,.14);color:rgba(245,245,248,.82);font-size:16px;cursor:pointer;padding:6px 10px;border-radius:var(--radius-sm);transition:all var(--motion-fast) var(--ease-standard);line-height:1;backdrop-filter:blur(10px)}
 #lbcl:hover{background:rgba(255,43,43,.25);border-color:rgba(255,43,43,.5);color:#fff}
-#lbpr{height:2px;background:rgba(255,255,255,.07);flex-shrink:0}
+#lbpr{position:absolute;z-index:21;top:0;left:0;right:0;height:2px;background:rgba(255,255,255,.08);pointer-events:none}
 #lbpf{height:100%;background:var(--r);width:0%;box-shadow:0 0 8px rgba(255,43,43,.5)}
-#lbmw{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;min-height:0;background:rgba(0,0,0,.25)}
-#lbi{display:none;max-width:100%;max-height:100%;object-fit:contain;user-select:none}
-#lbv{display:none;max-width:100%;max-height:100%;outline:none}
+#lbmw{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0;background:radial-gradient(ellipse at 50% 45%,rgba(45,46,53,.22),transparent 67%);}
+#lbi{display:none;max-width:calc(100% - 104px);max-height:calc(100% - 116px);object-fit:contain;user-select:none;border-radius:2px;box-shadow:0 22px 80px rgba(0,0,0,.24)}
+#lbv{display:none;max-width:calc(100% - 104px);max-height:calc(100% - 116px);outline:none;border-radius:2px;box-shadow:0 22px 80px rgba(0,0,0,.24)}
 /* Nav arrows */
 #lbpv,#lbnx{position:absolute;top:50%;transform:translateY(-50%);
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
-  color:rgba(255,255,255,.8);font-size:24px;cursor:pointer;
-  padding:14px 10px;border-radius:8px;z-index:5;transition:all .15s;line-height:1}
+  background:rgba(20,21,26,.52);border:1px solid rgba(255,255,255,.12);
+  color:rgba(255,255,255,.76);font-size:23px;cursor:pointer;
+  padding:14px 11px;border-radius:var(--radius-sm);z-index:10;transition:all var(--motion-fast) var(--ease-standard);line-height:1;backdrop-filter:blur(10px)}
 #lbpv:hover,#lbnx:hover{background:rgba(255,43,43,.35);border-color:rgba(255,43,43,.55);color:#fff}
-#lbpv{left:12px}
-#lbnx{right:12px}
+#lbpv{left:18px}
+#lbnx{right:18px}
 /* Bottom action bar */
-#lbbt{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;
-  background:linear-gradient(to top,rgba(4,4,14,.95) 0%,rgba(4,4,14,.8) 100%);
-  backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.05);
-  flex-wrap:wrap;
+#lbbt{position:absolute;z-index:20;left:0;right:0;bottom:0;min-height:62px;display:flex;align-items:center;justify-content:center;gap:7px;padding:12px 20px max(14px,env(safe-area-inset-bottom));
+  background:linear-gradient(to top,rgba(8,9,13,.86),rgba(8,9,13,.28) 74%,transparent);
+  flex-wrap:wrap;transition:opacity var(--motion-normal) var(--ease-standard),transform var(--motion-normal) var(--ease-standard);
 }
-.lb{padding:6px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:rgba(210,210,240,.62);font-size:11px;font-family:'IBM Plex Mono',monospace;cursor:pointer;transition:all .15s;white-space:nowrap}
+.lb{min-height:38px;padding:7px 13px;background:rgba(31,32,38,.55);border:1px solid rgba(255,255,255,.13);border-radius:var(--radius-sm);color:rgba(235,235,241,.78);font-size:12px;font-family:var(--font-ui);cursor:pointer;transition:all var(--motion-fast) var(--ease-standard);white-space:nowrap;backdrop-filter:blur(10px)}
 .lb:hover{background:rgba(255,255,255,.13);color:var(--t);border-color:rgba(255,255,255,.2)}
 .lb.on{background:rgba(255,43,43,.28);border-color:rgba(255,43,43,.55);color:#fff;box-shadow:0 0 14px rgba(255,43,43,.22)}
+#lb-fav.on{background:rgba(200,63,71,.88);border-color:rgba(255,255,255,.24);color:white}
+#lb-error{position:absolute;z-index:4;left:50%;top:50%;transform:translate(-50%,-50%);width:min(340px,calc(100% - 40px));padding:16px 18px;border:1px solid rgba(255,255,255,.14);border-radius:var(--radius-md);background:rgba(25,26,31,.88);color:rgba(244,244,248,.88);font:13px/1.5 var(--font-ui);text-align:center;box-shadow:var(--shadow-floating)}
 #spw{display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--t3)}
 #spd{width:70px;accent-color:var(--r)}
 #spv{color:var(--t2)}
 
 /* ── Premium Video Player Overlay ── */
 #vpc{
-  position:absolute;bottom:0;left:0;right:0;z-index:8;
+  position:absolute;bottom:72px;left:0;right:0;z-index:8;
   background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.35) 70%,transparent 100%);
   padding:36px 14px 12px;
   opacity:0;pointer-events:none;
@@ -562,6 +563,14 @@ body::before{content:'';position:fixed;inset:0;
   #ov.on{display:block}
   #main{margin-left:0}
   #hb{display:block}
+  /* The rail control is desktop-only; the toolbar owns mobile drawer toggling. */
+  #rail-toggle{display:none}
+  /* Keep the drawer and its scrim above the viewer only while explicitly open. */
+  #ov.on{z-index:210}
+  #sb.on{z-index:220}
+  /* The toolbar forms a stacking context. Expose only its menu button above an active viewer. */
+  body:has(#lb.on) #tb{z-index:auto;overflow:visible;background:transparent;border-color:transparent;backdrop-filter:none;pointer-events:none}
+  body:has(#lb.on) #hb{position:fixed;left:8px;top:8px;z-index:205;pointer-events:auto;background:rgba(25,26,31,.82);border:1px solid rgba(255,255,255,.18);border-radius:6px;color:#fff}
   #pggrid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
 }
 
@@ -683,13 +692,43 @@ body::before{content:'';position:fixed;inset:0;
     backdrop-filter:blur(4px);
   }
   /* Compact top bar */
-  #lbt{padding:6px 10px}
+  #lbt{padding:10px 58px 10px 14px;min-height:54px}
+  #lbmeta{display:none}
+  #lbcl{right:12px}
+  #lbi,#lbv{max-width:calc(100% - 48px);max-height:calc(100% - 174px);box-shadow:0 14px 40px rgba(0,0,0,.18)}
+  #lbpv{left:5px}#lbnx{right:5px}
   /* Hide volume slider on mobile; keep mute btn */
   #vpc-vol-sl{display:none}
   /* Make video controls row wrap properly */
+  #vpc{bottom:32vh;padding:30px 12px 10px}
   #vpc-ctrl{flex-wrap:wrap}
   #vpc-time{font-size:10px;padding:0 3px}
 }
+
+/* Package 4 viewer polish: preserve the media-first composition in both themes. */
+html[data-theme="light"] #lb{background:#e7e6e2}
+html[data-theme="light"] #lbmw{background:radial-gradient(ellipse at 50% 45%,rgba(255,255,255,.64),transparent 72%)}
+html[data-theme="light"] #lbt{background:linear-gradient(to bottom,rgba(232,231,226,.94),rgba(232,231,226,.52) 72%,transparent)}
+html[data-theme="light"] #lbn{color:rgba(37,38,43,.88)}
+html[data-theme="light"] #lbc{color:rgba(56,58,65,.64)}
+html[data-theme="light"] #lbmeta{color:rgba(56,58,65,.62)}
+html[data-theme="light"] #lbcl,html[data-theme="light"] #lbpv,html[data-theme="light"] #lbnx,html[data-theme="light"] .lb{background:rgba(250,249,247,.76);border-color:rgba(42,43,49,.14);color:var(--text-2);box-shadow:0 3px 14px rgba(35,37,44,.07)}
+html[data-theme="light"] #lbcl:hover,html[data-theme="light"] #lbpv:hover,html[data-theme="light"] #lbnx:hover,html[data-theme="light"] .lb:hover{background:var(--surface-2);color:var(--text-1);border-color:var(--accent)}
+html[data-theme="light"] #lbbt{background:linear-gradient(to top,rgba(232,231,226,.96),rgba(232,231,226,.5) 74%,transparent)}
+html[data-theme="light"] #lb-fav.on{background:var(--accent);color:#fff}
+#lb.lb-idle #lbt{opacity:0;transform:translateY(-8px);pointer-events:none}
+#lb.lb-idle #lbbt{opacity:0;transform:translateY(8px);pointer-events:none}
+#lb.lb-idle #lbpv{opacity:0;transform:translate(-5px,-50%);pointer-events:none}
+#lb.lb-idle #lbnx{opacity:0;transform:translate(5px,-50%);pointer-events:none}
+#lb #lbt:has(:focus-visible),#lb #lbbt:has(:focus-visible){opacity:1;transform:none;pointer-events:auto}
+#lb #lbpv:focus-visible,#lb #lbnx:focus-visible{opacity:1;pointer-events:auto}
+#lb[aria-busy="true"] #lbmw::after{content:"";position:absolute;width:22px;height:22px;border:2px solid rgba(255,255,255,.16);border-top-color:var(--accent);border-radius:50%;animation:lbLoad .8s linear infinite;pointer-events:none}
+#lb:not([aria-busy="true"]) #lbmw::after{display:none}
+@keyframes lbLoad{to{transform:rotate(360deg)}}
+@media(hover:hover) and (pointer:fine){#lb:hover #lbt,#lb:hover #lbbt,#lb:hover #lbpv,#lb:hover #lbnx{opacity:1;transform:none;pointer-events:auto}#lb.lb-idle:hover #lbt,#lb.lb-idle:hover #lbbt{opacity:0;pointer-events:none}#lb.lb-idle:hover #lbpv{opacity:0;transform:translate(-5px,-50%);pointer-events:none}#lb.lb-idle:hover #lbnx{opacity:0;transform:translate(5px,-50%);pointer-events:none}}
+@media(max-width:640px){#lbbt{padding-left:10px;padding-right:10px;gap:5px}#lb .lb{padding-inline:10px;font-size:11px}#lb-cluster{display:none}#lb-persons{max-width:100%}#lb-error{font-size:12px}}
+html[data-theme="light"] #lb-error{background:rgba(250,249,247,.96);border-color:var(--border-2);color:var(--text-1)}
+@media(prefers-reduced-motion:reduce){#lb #lbt,#lb #lbbt,#lb #lbpv,#lb #lbnx{transition:none}}
 
 /* ── Loading fade-in for person chips ── */
 .lb-pchip{animation:chipIn .15s ease}
@@ -1344,12 +1383,13 @@ html[data-theme="light"] #gw #gc .c .cf.on{background:rgba(200,63,71,.88);color:
 
 <!-- Lightbox -->
 <div id="lb">
-  <div id="lbt"><div id="lbn">—</div><div id="lbc">0/0</div><button id="lbcl">✕</button></div>
+  <div id="lbt"><div id="lbn">—</div><div id="lbmeta" aria-live="polite"></div><div id="lbc">0/0</div><button class="lb" id="lb-fav" type="button" aria-pressed="false" aria-label="Add to favorites" title="Add to favorites">★</button><button id="lbcl" type="button">✕</button></div>
   <div id="lbpr"><div id="lbpf"></div></div>
   <div id="lbmw">
     <button id="lbpv">‹</button>
     <img id="lbi" alt=""/>
     <video id="lbv" playsinline loop preload="none"></video>
+    <div id="lb-error" role="status" aria-live="polite" hidden>Media could not be displayed.</div>
     <div id="lbfov"><svg id="lbfsvg" xmlns="http://www.w3.org/2000/svg"></svg></div>
     <button id="lbnx">›</button>
 
@@ -2440,7 +2480,7 @@ function vpcToggleMute() {
 }
 
 function vpcToggleFs() {
-  const container = document.getElementById('lbmw');
+  const container = lbEl;
   if (!document.fullscreenElement) {
     (container.requestFullscreen || container.webkitRequestFullscreen ||
      container.mozRequestFullScreen || container.msRequestFullscreen)
@@ -2527,20 +2567,27 @@ function resetLightboxVideo() {
   // Keep the guard alive through the browser's asynchronous media events.
   setTimeout(() => { _lbVideoResetting = false; }, 100);
 }
-lbvEl.addEventListener('canplay', () => lbEl.setAttribute('aria-busy', 'false'));
+lbvEl.addEventListener('canplay', () => { lbEl.setAttribute('aria-busy', 'false'); document.getElementById('lb-error').hidden = true; });
 lbvEl.addEventListener('error', () => {
   lbEl.setAttribute('aria-busy', 'false');
   // Clearing a <video> by setting src='' can itself emit `error`. That is
   // cleanup, not a playback failure, and must never produce a user-facing toast.
   if (_lbVideoResetting || !lbvEl.currentSrc) return;
+  document.getElementById('lb-error').hidden = false;
   showToast('This video could not be played.', 'err');
 });
-lbiEl.addEventListener('load', () => lbEl.setAttribute('aria-busy', 'false'));
-lbiEl.addEventListener('error', () => { lbEl.setAttribute('aria-busy', 'false'); lbiEl.removeAttribute('src'); showToast('This image could not be loaded.', 'err'); });
+lbiEl.addEventListener('load', () => {
+  lbEl.setAttribute('aria-busy', 'false'); document.getElementById('lb-error').hidden = true;
+  if (lbiEl.naturalWidth && lbiEl.naturalHeight) document.getElementById('lbmeta').textContent = `${lbiEl.naturalWidth} × ${lbiEl.naturalHeight}`;
+});
+lbiEl.addEventListener('error', () => { lbEl.setAttribute('aria-busy', 'false'); document.getElementById('lb-error').hidden = false; lbiEl.removeAttribute('src'); showToast('This image could not be loaded.', 'err'); });
 lbvEl.addEventListener('play',  () => { vpcShow(true); });
 lbvEl.addEventListener('pause', () => { vpcShow(false); }); // stay visible when paused
 lbvEl.addEventListener('ended', () => { vpcShow(false); });
-lbvEl.addEventListener('loadedmetadata', () => { if (_vpcActive) vpcShow(true); });
+lbvEl.addEventListener('loadedmetadata', () => {
+  if (_vpcActive) vpcShow(true);
+  if (lbvEl.videoWidth && lbvEl.videoHeight) document.getElementById('lbmeta').textContent = `Video · ${lbvEl.videoWidth} × ${lbvEl.videoHeight}`;
+});
 
 // Fullscreen change — update icon
 document.addEventListener('fullscreenchange', _vpcFsIcon);
@@ -2552,6 +2599,7 @@ document.addEventListener('webkitfullscreenchange', _vpcFsIcon);
 function openLB(idx) {
   lbIdx=idx; lbEl.classList.add('on'); document.body.style.overflow='hidden';
   showLB();
+  lbRevealControls();
   maybeShowSwipeHint();
 }
 
@@ -2562,10 +2610,12 @@ function openContextLB(ctxItems, idx) {
   lbEl.classList.add('on');
   document.body.style.overflow = 'hidden';
   showLB();
+  lbRevealControls();
   maybeShowSwipeHint();
 }
 
 function closeLB() {
+  clearTimeout(_lbControlsTimer); lbEl.classList.remove('lb-idle');
   stopSS();
   lbEl.classList.remove('on');
   lbEl.classList.remove('assign-open'); // ensure dim/block state is always cleared
@@ -2583,6 +2633,15 @@ function showLB() {
   const _idx   = _lbCtx ? _lbCtx.idx   : lbIdx;
   const it = _items[_idx]; if(!it) return;
   recordMediaView(it);
+  const favButton = document.getElementById('lb-fav');
+  const isFav = !!favs[it.name];
+  favButton.classList.toggle('on', isFav);
+  favButton.setAttribute('aria-pressed', String(isFav));
+  favButton.setAttribute('aria-label', isFav ? 'Remove from favorites' : 'Add to favorites');
+  favButton.title = isFav ? 'Remove from favorites' : 'Add to favorites';
+  document.getElementById('lb-error').hidden = true;
+  lbiEl.alt = it.name;
+  document.getElementById('lbmeta').textContent = it.type === 'video' ? 'Video' : (it.type === 'gif' ? 'GIF' : 'Image');
   lbnEl.textContent=it.name;
   lbcEl.textContent=`${_idx+1}/${_items.length}`;
   resetLightboxVideo(); lbvEl.style.display='none'; lbiEl.style.display='none';
@@ -2635,6 +2694,37 @@ function lbGo(d) {
   }
   showLB();
 }
+
+let _lbControlsTimer = null;
+function lbRevealControls() {
+  lbEl.classList.remove('lb-idle');
+  clearTimeout(_lbControlsTimer);
+  if (lbEl.classList.contains('on') && matchMedia('(hover:hover) and (pointer:fine)').matches && !lbEl.querySelector(':focus-visible')) {
+    _lbControlsTimer = setTimeout(() => lbEl.classList.add('lb-idle'), 2800);
+  }
+}
+lbEl.addEventListener('pointermove', lbRevealControls);
+lbEl.addEventListener('pointerdown', lbRevealControls);
+lbEl.addEventListener('touchstart', lbRevealControls, { passive:true });
+lbEl.addEventListener('focusin', event => { if (event.target.matches(':focus-visible')) { clearTimeout(_lbControlsTimer); lbEl.classList.remove('lb-idle'); } });
+document.addEventListener('keydown', event => { if (lbEl.classList.contains('on') && event.key !== 'Tab') lbRevealControls(); });
+document.getElementById('lb-fav').addEventListener('click', () => {
+  const it = _lbCtx ? _lbCtx.items[_lbCtx.idx] : items[lbIdx]; if (!it) return;
+  const button = document.getElementById('lb-fav'), wasFav = !!favs[it.name];
+  if (wasFav) delete favs[it.name]; else favs[it.name] = 1;
+  writeFavs();
+  button.classList.toggle('on', !wasFav);
+  button.setAttribute('aria-pressed', String(!wasFav));
+  button.setAttribute('aria-label', wasFav ? 'Add to favorites' : 'Remove from favorites');
+  button.title = wasFav ? 'Add to favorites' : 'Remove from favorites';
+  document.querySelectorAll('#gc .c').forEach(card => {
+    if (card._item?.name !== it.name) return;
+    const cardButton = card.querySelector('.cf');
+    cardButton?.classList.toggle('on', !wasFav);
+    cardButton?.setAttribute('aria-pressed', String(!wasFav));
+    cardButton?.setAttribute('aria-label', wasFav ? 'Add to favorites' : 'Remove from favorites');
+  });
+});
 
 function getSSD() { return parseInt(spdEl.value)*1000; }
 function startSS() {
@@ -2886,6 +2976,7 @@ function showToast(msg, type = 'ok', duration = 2800) {
 //  PEOPLE PAGE
 // ─────────────────────────────────────────────────────────────
 let ppLoading    = false;
+let ppLoadGeneration = 0;
 let ppMore       = true;
 let ppPage       = 0;
 let ppPersonId   = null;  // null = list view; number = person detail
@@ -2966,6 +3057,7 @@ if (ppSortSelEl) {
 
 async function loadPeople(reset = true) {
   if (ppLoading) return;
+  const generation = ++ppLoadGeneration;
   ppLoading = true;
   ppspEl.classList.add('on');
   ppemptyEl.style.display = 'none';
@@ -2980,8 +3072,10 @@ async function loadPeople(reset = true) {
     const offset = ppPage * 60;
     const q = srchEl.value.trim();
     const r = await fetch(`/api/faces/persons?limit=60&offset=${offset}&search=${encodeURIComponent(q)}&sort=${encodeURIComponent(ppsort)}`);
+    if (generation !== ppLoadGeneration || viewMode !== 'people' || pdPersonId !== null) return;
     if (r.status === 401) { location.href = '/login.html'; return; }
     const d = await r.json();
+    if (generation !== ppLoadGeneration || viewMode !== 'people' || pdPersonId !== null) return;
 
     ppMore = (ppPage + 1) * 60 < d.total;
     ppPage++;
@@ -2992,20 +3086,24 @@ async function loadPeople(reset = true) {
       d.items.forEach(p => renderPersonCard(p));
     }
   } catch (e) {
+    if (generation !== ppLoadGeneration || viewMode !== 'people' || pdPersonId !== null) return;
     console.error('loadPeople:', e);
     ppMore = false;
     ppemptyEl.style.display = 'flex';
     ppemptyEl.innerHTML = `Couldn’t load People.<br><button class="state-action" data-retry-people>Retry</button>`;
     showToast('Couldn’t load People. Try again.', 'err', 5000);
   } finally {
-    ppLoading = false;
-    ppspEl.classList.remove('on');
+    if (generation === ppLoadGeneration) {
+      ppLoading = false;
+      ppspEl.classList.remove('on');
+    }
   }
 }
 
 // Filter people grid by search query — used when search input fires in people list view
 async function loadPeopleFiltered(q) {
   if (ppLoading) return;
+  const generation = ++ppLoadGeneration;
   ppLoading = true;
   ppspEl.classList.add('on');
   ppemptyEl.style.display = 'none';
@@ -3013,8 +3111,10 @@ async function loadPeopleFiltered(q) {
   ppgridEl.innerHTML = '';
   try {
     const r = await fetch(`/api/faces/persons?limit=60&offset=0&search=${encodeURIComponent(q)}&sort=${encodeURIComponent(ppsort)}`);
+    if (generation !== ppLoadGeneration || viewMode !== 'people' || pdPersonId !== null) return;
     if (r.status === 401) { location.href = '/login.html'; return; }
     const d = await r.json();
+    if (generation !== ppLoadGeneration || viewMode !== 'people' || pdPersonId !== null) return;
     ppMore = 60 < d.total; ppPage = 1;
     if (!d.items.length) {
       ppemptyEl.style.display = 'flex';
@@ -3025,12 +3125,15 @@ async function loadPeopleFiltered(q) {
       d.items.forEach(p => renderPersonCard(p));
     }
   } catch (e) {
+    if (generation !== ppLoadGeneration || viewMode !== 'people' || pdPersonId !== null) return;
     console.error('loadPeopleFiltered:', e);
     ppMore = false;
     ppemptyEl.style.display = 'flex';
     ppemptyEl.innerHTML = `Couldn’t search People.<br><button class="state-action" data-retry-people>Retry</button>`;
   }
-  finally { ppLoading = false; ppspEl.classList.remove('on'); }
+  finally {
+    if (generation === ppLoadGeneration) { ppLoading = false; ppspEl.classList.remove('on'); }
+  }
 }
 
 // Tracks the currently open context menu so we can close it on outside-click
@@ -3191,6 +3294,10 @@ function clearPersonMediaGrid() {
 }
 
 async function openPersonDetail(personOrId, legacyName) {
+  // Stop an in-flight People-list response from rendering into the shared detail grid.
+  ppLoadGeneration++;
+  ppLoading = false;
+  ppspEl.classList.remove('on');
   saveScroll();          // preserve people_list scroll before entering detail
   // Accept either a full person object or just an id (backwards compat)
   const person = (typeof personOrId === 'object' && personOrId !== null)
@@ -3434,8 +3541,8 @@ function goBackToPeopleList() {
 
 document.getElementById('ppback').addEventListener('click', () => {
   // Pop the history state we pushed when entering person detail
+  if (viewMode === 'people' && pdPersonId !== null) goBackToPeopleList();
   if (history.state && history.state.view === 'person') history.back();
-  else goBackToPeopleList();
 });
 
 // Handle browser Back/Forward button and mobile swipe-back gesture (Task 4)
@@ -4339,12 +4446,6 @@ const previewObserver = new IntersectionObserver((entries) => {
   }
 
   toggle.addEventListener('click', () => {
-    // On mobile this button still opens the overlay sidebar — don't collapse
-    if (window.innerWidth <= 640) {
-      sbEl.classList.toggle('on');
-      ovEl.classList.toggle('on');
-      return;
-    }
     const collapsed = sbEl.classList.toggle('collapsed');
     document.body.classList.toggle('rail-collapsed', collapsed);
     localStorage.setItem('vault_rail_collapsed', collapsed ? '1' : '0');
