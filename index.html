@@ -887,23 +887,23 @@ button:active:not(:disabled){transform:translateY(1px)}
 }
 html[data-theme="light"]{
   color-scheme:light;
-  --bg:#f1f0ed;--s:#faf9f7;--s2:#fff;--s3:#f2f1ee;
-  --br:rgba(42,43,49,.09);--br2:rgba(42,43,49,.16);
-  --t:#25262b;--t2:#565a64;--t3:#777c86;
+  --bg:#f0efec;--s:#f8f7f4;--s2:#fffefa;--s3:#eeedf0;
+  --br:rgba(48,45,54,.095);--br2:rgba(48,45,54,.17);
+  --t:#25252b;--t2:#555660;--t3:#747681;
   --r:#c83f47;--r2:rgba(200,63,71,.09);
   --surface-0:var(--bg);--surface-1:var(--s);--surface-2:var(--s2);--surface-3:var(--s3);
   --text-1:var(--t);--text-2:var(--t2);--text-3:var(--t3);
   --border-1:var(--br);--border-2:var(--br2);--accent:var(--r);--accent-soft:var(--r2);
   --success:#277d5e;--warning:#9a641a;--danger:#b9343d;
-  --shadow-card:0 2px 10px rgba(35,37,44,.055),0 0 0 1px rgba(35,37,44,.025);
-  --shadow-hover:0 8px 24px rgba(35,37,44,.12),0 0 0 1px rgba(200,63,71,.2);
-  --shadow-floating:0 18px 44px rgba(35,37,44,.16);
-  --glass:rgba(250,249,247,.92);--glass-border:rgba(42,43,49,.09);
+  --shadow-card:0 3px 12px rgba(43,40,49,.065),0 1px 2px rgba(43,40,49,.035);
+  --shadow-hover:0 10px 28px rgba(43,40,49,.13),0 0 0 1px rgba(200,63,71,.17);
+  --shadow-floating:0 20px 52px rgba(43,40,49,.18),0 2px 8px rgba(43,40,49,.05);
+  --glass:rgba(248,247,244,.91);--glass-border:rgba(48,45,54,.11);
   --focus-ring:#a92e38;--focus-halo:rgba(200,63,71,.14);
 }
 html,body{font-family:var(--font-ui);background-color:var(--bg);color:var(--t);transition:background-color var(--motion-slow) var(--ease-standard),color var(--motion-slow) var(--ease-standard)}
 body::before{background:radial-gradient(ellipse 72% 55% at 18% -8%,rgba(105,86,184,.075) 0%,transparent 60%),radial-gradient(ellipse 58% 46% at 88% 108%,rgba(230,76,80,.07) 0%,transparent 54%);opacity:.9}
-html[data-theme="light"] body::before{opacity:1;background:radial-gradient(ellipse 72% 55% at 18% -8%,rgba(157,146,195,.09) 0%,transparent 62%),radial-gradient(ellipse 58% 46% at 88% 108%,rgba(200,63,71,.035) 0%,transparent 54%)}
+html[data-theme="light"] body::before{opacity:1;background:radial-gradient(ellipse 70% 58% at 10% 0%,rgba(154,146,190,.15) 0%,transparent 64%),radial-gradient(ellipse 58% 46% at 96% 102%,rgba(197,110,99,.075) 0%,transparent 58%),radial-gradient(ellipse 42% 38% at 66% 42%,rgba(190,202,212,.12) 0%,transparent 70%),linear-gradient(135deg,rgba(255,255,255,.34),transparent 54%)}
 :focus-visible{outline:2px solid var(--focus-ring)!important;outline-offset:3px!important;box-shadow:0 0 0 4px var(--focus-halo)!important}
 input,select,textarea{color:var(--t)}
 input::placeholder,textarea::placeholder{color:var(--t3);opacity:1}
@@ -1241,12 +1241,15 @@ html[data-theme="light"] #ppbody.people-overview .pgav::after{background:linear-
 @media(min-width:641px){#hb{display:none}}
 @media(max-width:640px){
   #pph{flex-wrap:wrap;gap:8px;padding:8px 12px}
-  #pph:has(#pd-actions.on){max-height:116px}
+  /* The person toolbar has two deliberate rows. Let its grid occupy its full
+     content height so it cannot paint over the adjacent scan status row. */
+  #pph:has(#pd-actions.on){display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:minmax(42px,auto) auto;align-items:center;column-gap:8px;row-gap:6px;max-height:none;min-height:0;overflow:visible}
   #ppback.on{min-height:42px;padding-inline:10px}
-  #pp-sort-wrap{margin-left:auto;padding-left:9px}
-  #scan-wrap{margin-left:0}
-  #pd-actions{order:3;width:100%;justify-content:flex-end;padding-top:5px;border-top:1px solid var(--border-1)}
-  #pd-actions .pd-btn{min-height:38px;padding-inline:9px;font-size:11px}
+  #pph:has(#pd-actions.on) #pptitle{grid-column:2;grid-row:1;min-width:0;font:500 12px/1.25 var(--font-ui)}
+  #pp-sort-wrap{display:none}
+  #scan-wrap{grid-column:3;grid-row:1;margin:0}
+  #pd-actions{grid-column:1 / -1;grid-row:2;order:0;width:100%;justify-content:space-between;gap:7px;padding-top:6px;border-top:1px solid var(--border-1)}
+  #pd-actions .pd-btn{flex:1;min-width:0;min-height:40px;padding-inline:7px;font-size:11px}
   #ppbody{padding:21px 15px 30px}
   #people-intro{align-items:flex-start;gap:10px;margin:2px auto 20px}
   #people-intro-title{font-size:29px}

@@ -1,456 +1,200 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>ACCESS DENIED — AUTHENTICATE</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&family=Bebas+Neue&display=swap" rel="stylesheet"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#08090d"/>
+<title>VaultOS — Private Media Vault</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-
-:root{
-  --r:#FF2B2B;
-  --bg:#080808;
-  --s:#0d0d0d;
-  --s2:#111;
-  --br:rgba(255,255,255,.05);
-  --t:rgba(255,255,255,.85);
-  --t2:rgba(255,255,255,.4);
-  --t3:rgba(255,255,255,.15);
-  --green:#00ff41;
-}
-
-html,body{height:100%;overflow:hidden}
-
-body{
-  background:var(--bg);
-  color:var(--t2);
-  font-family:'IBM Plex Mono',monospace;
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  -webkit-font-smoothing:antialiased;
-}
-
-/* ── Scanlines overlay ── */
-body::before{
-  content:'';position:fixed;inset:0;
-  background:repeating-linear-gradient(0deg,rgba(0,0,0,.06) 0px,rgba(0,0,0,.06) 1px,transparent 1px,transparent 2px);
-  pointer-events:none;z-index:100;
-}
-
-/* ── Noise grain ── */
-body::after{
-  content:'';position:fixed;
-  inset:-50%;width:200%;height:200%;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events:none;z-index:99;opacity:.5;
-  animation:nshift 10s steps(10) infinite;
-}
-@keyframes nshift{
-  0%{transform:translate(0,0)}20%{transform:translate(1%,2%)}
-  40%{transform:translate(-2%,1%)}60%{transform:translate(1%,-1%)}
-  80%{transform:translate(-1%,2%)}100%{transform:translate(0,0)}
-}
-
-/* ── Vignette ── */
-#vignette{
-  position:fixed;inset:0;
-  background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.7) 100%);
-  pointer-events:none;z-index:98;
-}
-
-/* ── Red flash bg ── */
-@keyframes redflash{0%,100%{background:transparent}50%{background:rgba(255,43,43,.04)}}
-#flash{position:fixed;inset:0;z-index:1;animation:redflash 3s ease infinite;pointer-events:none}
-
-/* ── Top classified bar ── */
-#classbar{
-  position:relative;z-index:50;
-  background:var(--r);
-  padding:5px 0;
-  text-align:center;
-  overflow:hidden;
-}
-#classbar span{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:11px;
-  color:#000;
-  letter-spacing:.5em;
-}
-#classbar::after{
-  content:'';position:absolute;inset:0;
-  background:repeating-linear-gradient(90deg,transparent 0,transparent 40px,rgba(0,0,0,.12) 40px,rgba(0,0,0,.12) 42px);
-}
-
-/* ── Header ── */
-#hdr{
-  position:relative;z-index:50;
-  display:flex;justify-content:space-between;align-items:center;
-  padding:16px 24px;
-  border-bottom:1px solid var(--br);
-}
-.hdr-access{font-size:9px;letter-spacing:.4em;color:rgba(255,255,255,.2);text-transform:uppercase}
-.hdr-denied{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:26px;color:var(--r);letter-spacing:.08em;line-height:1;
-  text-shadow:0 0 30px rgba(255,43,43,.2);
-}
-.hdr-status{
-  display:flex;align-items:center;gap:8px;
-  font-size:9px;letter-spacing:.2em;color:var(--green);text-transform:uppercase;
-}
-.hdr-dot{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--green);
-  animation:pingaui .9s cubic-bezier(0,0,.2,1) infinite;
-}
-@keyframes pingaui{75%,100%{transform:scale(1.8);opacity:0}}
-
-/* ── Main ── */
-main{
-  flex:1;display:flex;align-items:center;justify-content:center;
-  padding:24px 16px;position:relative;z-index:50;
-}
-.inner{width:100%;max-width:min(520px,calc(100vw - 32px))}
-
-/* ── Glitch title ── */
-.auth-title{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:clamp(56px,10vw,88px);
-  color:var(--r);line-height:1;
-  text-align:center;
-  text-shadow:0 0 40px rgba(255,43,43,.2);
-  animation:glitch 6s steps(1) infinite;
-}
-@keyframes glitch{
-  0%  {text-shadow: 3px 0 var(--r),-3px 0 #00ffff;clip-path:inset(0 0 95% 0)}
-  5%  {text-shadow:-3px 0 var(--r), 3px 0 #00ffff;clip-path:inset(10% 0 85% 0)}
-  10% {text-shadow: 3px 0 var(--r),-3px 0 #00ffff;clip-path:inset(40% 0 50% 0)}
-  15% {text-shadow:-3px 0 var(--r), 3px 0 #00ffff;clip-path:inset(80% 0 5% 0)}
-  20%,100%{text-shadow:none;clip-path:inset(0 0 0 0)}
-}
-.auth-sub{
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  margin-top:10px;margin-bottom:32px;
-  font-size:9px;letter-spacing:.3em;color:rgba(255,255,255,.2);text-transform:uppercase;
-}
-.auth-sub-line{width:32px;height:1px;background:rgba(255,43,43,.3)}
-
-/* ── Card with corner brackets ── */
-.card{
-  position:relative;
-  max-width:360px;
-  margin-left:auto;
-  margin-right:auto;
-  padding:30px 28px 26px;
-  background:var(--s);
-  border:1px solid var(--br);
-}
-.card::before,.card::after,.cb-bl,.cb-br{
-  content:'';position:absolute;width:16px;height:16px;
-  border-color:var(--r);border-style:solid;opacity:.5;
-}
-.card::before{top:-8px;left:-8px;border-width:2px 0 0 2px}
-.card::after {top:-8px;right:-8px;border-width:2px 2px 0 0}
-.cb-bl{bottom:-8px;left:-8px;border-width:0 0 2px 2px}
-.cb-br{bottom:-8px;right:-8px;border-width:0 2px 2px 0}
-
-.card-label{
-  font-size:9px;letter-spacing:.3em;color:rgba(255,255,255,.2);
-  text-transform:uppercase;margin-bottom:20px;
-}
-.card-label span{color:var(--r);margin-right:4px}
-
-/* ── Password input ── */
-.pwd-wrap{position:relative;margin-bottom:14px}
-.pwd-prefix{
-  position:absolute;left:12px;top:50%;transform:translateY(-50%);
-  color:var(--r);font-size:12px;pointer-events:none;user-select:none;
-}
-#pwd-input{
-  width:100%;background:var(--s2);
-  border:1px solid rgba(255,255,255,.1);
-  color:rgba(255,255,255,.85);
-  font-family:'IBM Plex Mono',monospace;
-  font-size:11px;letter-spacing:.15em;
-  padding:11px 52px 11px 28px;
-  outline:none;
-  transition:border-color .15s,box-shadow .15s;
-}
-#pwd-input::placeholder{color:rgba(255,255,255,.18)}
-#pwd-input:focus{
-  border-color:var(--r);
-  box-shadow:0 0 0 1px var(--r),0 0 20px rgba(255,43,43,.12);
-}
-#toggle-vis{
-  position:absolute;right:12px;top:50%;transform:translateY(-50%);
-  background:none;border:none;
-  color:rgba(255,255,255,.25);
-  font-family:'IBM Plex Mono',monospace;
-  font-size:9px;letter-spacing:.12em;text-transform:uppercase;
-  cursor:pointer;transition:color .12s;padding:2px;
-}
-#toggle-vis:hover{color:rgba(255,255,255,.5)}
-
-/* ── Error message ── */
-#error-msg{
-  display:none;
-  margin-bottom:14px;padding:8px 12px;
-  background:rgba(100,0,0,.25);
-  border:1px solid rgba(255,43,43,.3);
-  color:rgba(255,100,100,.9);
-  font-size:9px;letter-spacing:.12em;text-transform:uppercase;
-}
-
-/* ── Loading bar ── */
-#loading-bar{
-  display:none;
-  margin-bottom:14px;
-  height:1px;background:rgba(255,255,255,.05);
-  position:relative;overflow:hidden;
-}
-#loading-bar::after{
-  content:'';position:absolute;top:0;left:-60%;width:60%;height:100%;
-  background:var(--r);
-  animation:lslide .8s ease infinite;
-}
-@keyframes lslide{to{left:100%}}
-
-/* ── Submit button ── */
-#login-btn{
-  width:100%;background:var(--r);
-  border:none;
-  color:#fff;
-  font-family:'Space Grotesk',sans-serif;
-  font-weight:700;font-size:11px;
-  letter-spacing:.2em;text-transform:uppercase;
-  padding:13px;cursor:pointer;
-  transition:background .15s,transform .1s;
-  animation:panic-pulse 2s infinite;
-}
-#login-btn:hover{background:#cc2222}
-#login-btn:active{transform:scale(.98)}
-#login-btn:disabled{opacity:.6;cursor:default;animation:none}
-@keyframes panic-pulse{
-  0%  {box-shadow:0 0 0 0 rgba(255,43,43,.5)}
-  70% {box-shadow:0 0 0 8px rgba(255,43,43,0)}
-  100%{box-shadow:0 0 0 0 rgba(255,43,43,0)}
-}
-
-.card-hint{
-  margin-top:18px;
-  font-size:8px;letter-spacing:.2em;color:rgba(255,255,255,.12);
-  text-transform:uppercase;text-align:center;
-}
-
-/* ── Shake animation ── */
-@keyframes shake{
-  0%,100%{transform:translateX(0)}
-  15%{transform:translateX(-8px)}30%{transform:translateX(8px)}
-  45%{transform:translateX(-6px)}60%{transform:translateX(6px)}
-  75%{transform:translateX(-3px)}90%{transform:translateX(3px)}
-}
-.shake{animation:shake .5s ease}
-
-/* ── Terminal log ── */
-#termlog{
-  margin-top:24px;
-  max-width:360px;
-  margin-left:auto;
-  margin-right:auto;
-  border:1px solid var(--br);
-  background:#0a0a0a;
-  padding:14px;
-  max-height:120px;
-  overflow-y:auto;
-}
-#termlog::-webkit-scrollbar{width:2px}
-#termlog::-webkit-scrollbar-thumb{background:rgba(255,43,43,.3)}
-.log-header{font-size:8px;letter-spacing:.3em;color:rgba(255,255,255,.12);text-transform:uppercase;margin-bottom:8px}
-.log-line{font-size:9px;letter-spacing:.08em;color:rgba(255,255,255,.25);line-height:1.8}
-.log-tag{color:var(--r)}
-.log-ok  .log-tag{color:#2ecc71}
-.log-warn .log-tag{color:#e67e22}
-.log-err .log-tag{color:var(--r)}
-
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-.cursor{animation:blink 1s step-end infinite}
-
-/* ── Footer ── */
-footer{
-  position:relative;z-index:50;
-  border-top:1px solid var(--br);
-  padding:8px 24px;
-  display:flex;justify-content:space-between;align-items:center;
-}
-.ft{font-size:8px;letter-spacing:.2em;text-transform:uppercase}
-.ft-brand{color:rgba(255,43,43,.3)}
-.ft-info{color:rgba(255,255,255,.12)}
+:root{color-scheme:dark;--page:#08090d;--page-raised:#0d0f15;--panel:rgba(14,16,22,.93);--panel-edge:rgba(190,197,214,.12);--field:#11141c;--ink:#e6e6e9;--muted:#9298a7;--quiet:#697181;--line:rgba(190,197,214,.1);--accent:#ed4148;--accent-hot:#ff595d;--accent-soft:rgba(237,65,72,.1);--ok:#50b88b;--shadow:0 24px 76px rgba(0,0,0,.54);--focus:0 0 0 3px rgba(237,65,72,.2);--ui:Inter,'Segoe UI',sans-serif;--display:'Space Grotesk',Inter,'Segoe UI',sans-serif;--mono:'IBM Plex Mono',Consolas,monospace}
+html[data-theme="light"]{color-scheme:light;--page:#e9e9e8;--page-raised:#f4f3f1;--panel:rgba(249,248,246,.92);--panel-edge:rgba(43,45,54,.14);--field:#f2f1ef;--ink:#292a30;--muted:#626571;--quiet:#777b86;--line:rgba(43,45,54,.12);--accent:#c53c45;--accent-hot:#ad313b;--accent-soft:rgba(197,60,69,.09);--ok:#287956;--shadow:0 24px 68px rgba(45,42,50,.17);--focus:0 0 0 3px rgba(197,60,69,.18)}
+*{box-sizing:border-box}html,body{min-width:320px;min-height:100%;margin:0}body{position:relative;isolation:isolate;min-height:100svh;overflow-x:hidden;background:var(--page);color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased;transition:background-color .45s ease,color .3s ease}
+body::before{content:"";position:fixed;inset:0;z-index:-3;pointer-events:none;background:radial-gradient(ellipse 46% 72% at 50% 48%,rgba(20,22,31,.98),transparent 77%),radial-gradient(ellipse 65% 72% at 50% 100%,rgba(110,26,34,.12),transparent 78%),linear-gradient(180deg,#090a0f,var(--page))}
+body::after{content:"";position:fixed;inset:0;z-index:4;pointer-events:none;opacity:.12;background:repeating-linear-gradient(to bottom,transparent 0,transparent 3px,rgba(0,0,0,.18) 4px)}
+html[data-theme="light"] body::before{background:radial-gradient(ellipse 47% 70% at 50% 46%,rgba(255,255,255,.96),transparent 78%),radial-gradient(ellipse 62% 60% at 4% 98%,rgba(163,163,191,.24),transparent 80%),radial-gradient(ellipse 58% 62% at 98% 100%,rgba(206,138,132,.16),transparent 82%),linear-gradient(160deg,#f2f1ef,#e8e8e6)}html[data-theme="light"] body::after{opacity:.035;background:repeating-linear-gradient(to bottom,transparent 0,transparent 3px,rgba(44,43,50,.2) 4px)}
+.environment{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;display:grid;place-items:center;transition:opacity .8s ease,transform 1s cubic-bezier(.2,.7,.2,1);animation:environment-entry .85s ease-out both}.radar-rings{position:absolute;width:min(110vmin,1120px);aspect-ratio:1;border-radius:50%;opacity:.44;background:repeating-radial-gradient(circle,transparent 0 102px,rgba(184,43,49,.15) 103px 104px,transparent 105px 202px);mask-image:radial-gradient(circle,transparent 0 10%,#000 22% 73%,transparent 83%);-webkit-mask-image:radial-gradient(circle,transparent 0 10%,#000 22% 73%,transparent 83%)}.radar-sweep{position:absolute;width:min(110vmin,1120px);aspect-ratio:1;border-radius:50%;opacity:.66;background:conic-gradient(from 0deg,transparent 0 289deg,rgba(200,39,48,.035) 302deg,rgba(233,56,62,.14) 330deg,rgba(237,65,72,.025) 352deg,transparent 360deg);mask-image:radial-gradient(circle,transparent 0 10%,#000 22% 72%,transparent 83%);-webkit-mask-image:radial-gradient(circle,transparent 0 10%,#000 22% 72%,transparent 83%);transform-origin:center;animation:radar-turn 24s linear infinite;will-change:transform}.radar-core{position:absolute;width:min(35vmin,360px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(169,37,44,.065),rgba(115,31,42,.025) 48%,transparent 72%);filter:blur(7px)}
+.page{position:relative;z-index:1;display:grid;grid-template-rows:auto 1fr auto;width:min(1440px,100%);min-height:100svh;margin:auto;padding:21px clamp(18px,4vw,58px) calc(17px + env(safe-area-inset-bottom));animation:page-entry .58s cubic-bezier(.2,.75,.24,1) both}.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:40px}.vault-mark{display:flex;align-items:center;gap:10px;color:var(--muted);font:500 10px/1.4 var(--mono);letter-spacing:.1em;text-transform:uppercase}.mark-dot{position:relative;width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px rgba(237,65,72,.5)}.mark-dot::after{content:"";position:absolute;inset:-4px;border:1px solid rgba(237,65,72,.26);border-radius:50%;animation:dot-pulse 3.2s ease-out infinite}.top-actions{display:flex;align-items:center;gap:12px}.local-label{color:var(--quiet);font:10px var(--mono);letter-spacing:.04em}.theme-toggle{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--panel-edge);border-radius:9px;background:var(--panel);color:var(--muted);font:16px var(--ui);cursor:pointer;transition:border-color .16s,color .16s,background .16s}.theme-toggle:hover{border-color:var(--accent);color:var(--accent)}.theme-toggle:focus-visible,.toggle-visibility:focus-visible,.unlock:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.entry-stage{display:grid;place-items:center;min-height:0;padding:clamp(34px,7vh,78px) 0}.entry-wrap{position:relative;width:min(100%,456px);perspective:1100px}.aura{position:absolute;z-index:-1;inset:-62px -54px -52px;border-radius:50%;background:radial-gradient(ellipse,rgba(197,41,48,.11),rgba(115,27,37,.045) 44%,transparent 73%);filter:blur(20px);opacity:.82;animation:aura-breathe 8s ease-in-out infinite alternate}.entry-card{position:relative;overflow:hidden;padding:clamp(27px,4.4vw,42px);border:1px solid var(--panel-edge);border-radius:15px;background:var(--panel);box-shadow:var(--shadow);backdrop-filter:blur(19px) saturate(1.08);transform-origin:50% 48%;transition:border-color .25s ease,box-shadow .25s ease,background-color .3s ease,opacity .65s ease,transform .75s cubic-bezier(.66,0,.2,1),filter .7s ease}.entry-card::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(136deg,rgba(255,255,255,.025),transparent 35%,transparent 72%,rgba(237,65,72,.018))}.entry-card.is-busy{border-color:rgba(237,65,72,.3);box-shadow:var(--shadow),0 0 38px rgba(193,36,44,.08)}.lock-stage,.identity,.form-group,.entry-footer,.privacy-note{opacity:0;transform:translateY(10px);animation:stage-in .62s cubic-bezier(.2,.75,.24,1) forwards}.lock-stage{animation-delay:.04s}.identity{animation-delay:.12s}.form-group{animation-delay:.2s}.form-meta{opacity:0;animation:stage-in .62s .27s cubic-bezier(.2,.75,.24,1) forwards}.unlock-wrap{opacity:0;animation:stage-in .62s .34s cubic-bezier(.2,.75,.24,1) forwards}.entry-footer{animation-delay:.4s}.privacy-note{animation-delay:.46s}
+.lock-stage{display:grid;place-items:center;margin-bottom:24px}.lock-tile{display:grid;place-items:center;width:58px;height:58px;border:1px solid var(--panel-edge);border-radius:13px;background:linear-gradient(150deg,rgba(255,255,255,.045),rgba(255,255,255,.012));color:var(--accent);box-shadow:inset 0 1px rgba(255,255,255,.035)}.lock-tile svg{width:25px;height:25px}.identity{text-align:center;margin-bottom:32px}.wordmark{margin:0;color:var(--ink);font:700 clamp(27px,6vw,35px)/1 var(--display);letter-spacing:.22em;text-transform:uppercase}.wordmark .accent{color:var(--accent)}.identity-sub{margin:11px 0 0;color:var(--quiet);font:10px/1.5 var(--mono);letter-spacing:.19em;text-transform:uppercase}
+.form-group{margin:0}.field-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px}.field-label{color:var(--muted);font-size:10px;font-weight:650;letter-spacing:.1em;text-transform:uppercase}.field-context{color:var(--quiet);font:9px var(--mono);letter-spacing:.07em;text-align:right}.password-wrap{position:relative}.password-input{display:block;width:100%;height:54px;padding:0 67px 0 43px;border:1px solid var(--line);border-radius:8px;outline:none;background:var(--field);color:var(--ink);font:13px var(--mono);letter-spacing:.03em;transition:border-color .18s,box-shadow .18s,background-color .18s}.password-input::placeholder{color:var(--quiet);letter-spacing:0}.password-input:hover{border-color:var(--panel-edge)}.password-input:focus{border-color:var(--accent);box-shadow:var(--focus)}.key-icon{position:absolute;left:14px;top:50%;width:17px;height:17px;transform:translateY(-50%);color:var(--quiet);pointer-events:none;transition:color .16s}.password-wrap:focus-within .key-icon{color:var(--accent)}.toggle-visibility{position:absolute;top:5px;right:5px;display:grid;place-items:center;min-width:48px;height:44px;padding:0 9px;border:0;border-radius:6px;background:transparent;color:var(--muted);font:600 9px var(--mono);letter-spacing:.05em;cursor:pointer}.toggle-visibility:hover{background:var(--accent-soft);color:var(--ink)}
+.error-message{display:none;align-items:flex-start;gap:7px;margin:12px 0 0;color:#ed898c;font:11px/1.5 var(--ui)}.error-message.visible{display:flex}.error-message svg{width:14px;height:14px;flex:none;margin-top:1px}.status-line{display:none;margin-top:12px;color:var(--muted);font:10px var(--mono)}.status-line.visible{display:block}.status-line.error{color:#d75259}.status-line.success{color:var(--ok)}
+.form-meta{display:flex;justify-content:flex-start;align-items:center;gap:8px;padding-top:17px;color:var(--quiet);font:10px/1.5 var(--mono)}.form-meta svg{width:14px;height:14px;flex:none;color:var(--accent)}.unlock-wrap{padding-top:20px}.unlock{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:55px;padding:0 20px;overflow:hidden;border:1px solid var(--accent);border-radius:8px;background:linear-gradient(135deg,#dc3e45,#e94b50);color:#fff;font:700 12px var(--display);letter-spacing:.16em;text-transform:uppercase;cursor:pointer;box-shadow:0 8px 22px rgba(198,41,49,.2);transition:background .16s,border-color .16s,box-shadow .16s,transform .12s,opacity .16s}.unlock:hover:not(:disabled){background:linear-gradient(135deg,#e8494f,#f05055);box-shadow:0 9px 26px rgba(198,41,49,.29)}.unlock:active:not(:disabled){transform:scale(.99)}.unlock:disabled{cursor:wait;opacity:.82}.unlock-arrow{width:18px;height:18px;transition:transform .16s}.unlock:hover:not(:disabled) .unlock-arrow{transform:translateX(3px)}.spinner{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.38);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}.entry-card.is-busy .unlock-arrow{display:none}.entry-card.is-busy .spinner{display:block}.entry-card.is-unlocked .unlock{border-color:var(--ok);background:linear-gradient(135deg,#2c795c,#368c69);box-shadow:0 0 24px rgba(56,151,108,.23)}.entry-card.is-unlocked .lock-tile{color:var(--ok);border-color:rgba(80,184,139,.34)}.entry-footer{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:25px;padding-top:18px;color:var(--quiet);font:9px/1.5 var(--mono)}.entry-footer::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:var(--line)}.session-note{display:flex;align-items:center;gap:7px;min-width:0}.session-dot{width:6px;height:6px;flex:none;border-radius:50%;background:var(--ok);box-shadow:0 0 9px rgba(80,184,139,.28)}.entry-footer span:last-child{text-align:right}.privacy-note{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:15px;color:var(--quiet);font:9px/1.5 var(--mono);letter-spacing:.015em;text-align:center}.privacy-note svg{width:14px;height:14px;flex:none;color:var(--accent)}
+.site-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:14px;border-top:1px solid var(--line);color:var(--quiet);font:9px var(--mono);letter-spacing:.05em}.site-footer span:last-child{text-align:right}
+.scan-beam{position:fixed;z-index:3;top:-8%;left:0;width:100%;height:3px;opacity:0;pointer-events:none;background:linear-gradient(90deg,transparent 2%,rgba(237,65,72,.42) 22%,#ffd6d4 50%,rgba(237,65,72,.42) 78%,transparent 98%);box-shadow:0 0 14px rgba(237,65,72,.56),0 0 34px rgba(237,65,72,.22)}.scan-beam.active{animation:scan-pass .75s cubic-bezier(.2,.6,.25,1) forwards}.is-unlocking .environment{transform:scale(1.09);opacity:.22}.is-unlocking .entry-card{transform:translateY(-12px) scale(.96);opacity:0;filter:blur(7px)}.is-unlocking .entry-stage{transition:opacity .55s ease}.is-unlocking .topbar,.is-unlocking .site-footer{transition:opacity .35s ease;opacity:0}.is-unlocking::before{background:radial-gradient(ellipse 42% 54% at 50% 48%,rgba(201,49,56,.28),transparent 75%),linear-gradient(180deg,var(--page-raised),var(--page))}
+@keyframes radar-turn{to{transform:rotate(1turn)}}@keyframes environment-entry{from{opacity:0;transform:scale(.965)}to{opacity:1;transform:scale(1)}}@keyframes page-entry{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes aura-breathe{from{opacity:.55;transform:scale(.97)}to{opacity:.9;transform:scale(1.03)}}@keyframes dot-pulse{0%{transform:scale(.7);opacity:.8}100%{transform:scale(1.9);opacity:0}}@keyframes stage-in{to{opacity:1;transform:translateY(0)}}@keyframes scan-pass{0%{top:-8%;opacity:0}12%{opacity:1}80%{opacity:.9}100%{top:108%;opacity:0}}@keyframes spin{to{transform:rotate(360deg)}}
+@media(min-width:1500px){.entry-wrap{width:456px}.entry-stage{padding-block:clamp(52px,9vh,100px)}}
+@media(max-width:760px){.page{padding-inline:18px}.local-label{font-size:9px}.entry-stage{padding-block:38px}.entry-wrap{width:min(100%,440px)}.radar-rings,.radar-sweep{width:min(132vmin,900px)}.identity{margin-bottom:26px}}
+@media(max-width:430px){.page{padding-inline:15px;padding-top:14px}.topbar{min-height:38px}.vault-mark{gap:8px;font-size:9px}.top-actions{gap:8px}.theme-toggle{width:36px;height:36px}.entry-stage{padding-block:25px}.entry-card{padding:27px 22px 23px;border-radius:12px}.lock-stage{margin-bottom:20px}.identity{margin-bottom:25px}.wordmark{font-size:29px;letter-spacing:.2em}.identity-sub{font-size:9px;letter-spacing:.15em}.field-context{font-size:8px}.password-input{height:52px}.form-meta{padding-top:14px}.unlock-wrap{padding-top:17px}.entry-footer{margin-top:21px;padding-top:15px;font-size:8px}.privacy-note{font-size:8px}.site-footer{font-size:8px}}
+@media(max-width:370px){.entry-card{padding-inline:18px}.local-label{max-width:128px;text-align:right}.field-context{display:none}.wordmark{font-size:26px}.entry-footer{gap:7px}}
+@media(max-height:650px) and (max-width:760px){.page{padding-top:11px;padding-bottom:calc(11px + env(safe-area-inset-bottom))}.entry-stage{padding-block:16px}.entry-card{padding-block:19px}.lock-stage{margin-bottom:12px}.lock-tile{width:47px;height:47px}.identity{margin-bottom:17px}.identity-sub{margin-top:8px}.form-meta{padding-top:10px}.unlock-wrap{padding-top:13px}.entry-footer{margin-top:15px;padding-top:12px}.privacy-note{margin-top:9px}.site-footer{padding-top:10px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.page,.environment,.radar-sweep,.radar-core,.aura,.mark-dot::after{animation:none!important}.radar-sweep{opacity:.38}}
 </style>
 </head>
 <body>
-<div id="vignette"></div>
-<div id="flash"></div>
-
-<div id="classbar"><span>⬛ CLASSIFIED &nbsp;·&nbsp; RESTRICTED ACCESS &nbsp;·&nbsp; EYES ONLY ⬛</span></div>
-
-<div id="hdr">
-  <div>
-    <div class="hdr-access">access</div>
-    <div class="hdr-denied">DENIED</div>
-  </div>
-  <div class="hdr-status">
-    <span class="hdr-dot"></span>
-    Awaiting Auth
-  </div>
+<div class="environment" aria-hidden="true"><div class="radar-rings"></div><div class="radar-sweep"></div><div class="radar-core"></div></div>
+<div class="scan-beam" id="scan-laser" aria-hidden="true"></div>
+<div class="page">
+  <header class="topbar">
+    <div class="vault-mark"><span class="mark-dot" aria-hidden="true"></span><span>Private media vault</span></div>
+    <div class="top-actions"><span class="local-label">Your library, your terms</span><button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch to light theme">☼</button></div>
+  </header>
+  <main class="entry-stage">
+    <div class="entry-wrap">
+      <div class="aura" aria-hidden="true"></div>
+      <section class="entry-card" id="login-card" aria-labelledby="vault-title">
+        <div class="lock-stage" aria-hidden="true"><div class="lock-tile"><svg viewBox="0 0 24 24" fill="none"><rect x="5.5" y="10" width="13" height="10" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="15" r="1.2" fill="currentColor"/></svg></div></div>
+        <div class="identity"><h1 class="wordmark" id="vault-title"><span class="accent">V</span>aultOS</h1><p class="identity-sub">Private media vault · welcome back</p></div>
+        <form id="login-form" novalidate>
+          <div class="form-group">
+            <div class="field-head"><label class="field-label" for="pwd-input">Passphrase</label><span class="field-context">ENTER TO CONTINUE</span></div>
+            <div class="password-wrap">
+              <svg class="key-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="8" cy="15" r="4" stroke="currentColor" stroke-width="1.7"/><path d="m11 12 8-8 2 2-2 2 2 2-3 3-2-2-3 3" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+              <input class="password-input" id="pwd-input" type="password" placeholder="Enter your passphrase" autocomplete="current-password" autocapitalize="none" spellcheck="false" aria-describedby="login-help login-error"/>
+              <button class="toggle-visibility" id="toggle-vis" type="button" aria-label="Show passphrase" aria-pressed="false">SHOW</button>
+            </div>
+            <p class="error-message" id="login-error" role="alert" aria-live="polite"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M10 6.5v4M10 13.4v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span id="error-text"></span></p>
+            <p class="status-line" id="login-status" role="status" aria-live="polite"></p>
+          </div>
+          <div class="form-meta" id="login-help"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2.5 16 5v4.6c0 3.5-2.4 6.3-6 7.9-3.6-1.6-6-4.4-6-7.9V5l6-2.5Z" stroke="currentColor" stroke-width="1.35"/><path d="m7.2 9.8 1.8 1.8 3.8-4" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Only you can open this library.</span></div>
+          <div class="unlock-wrap"><button class="unlock" id="login-btn" type="submit"><span id="login-btn-text">Unlock vault</span><svg class="unlock-arrow" id="login-btn-arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="spinner" aria-hidden="true"></span></button></div>
+        </form>
+        <footer class="entry-footer"><span class="session-note"><i class="session-dot" aria-hidden="true"></i><span id="session-state">Vault ready when you are</span></span><span id="footer-host"></span></footer>
+      </section>
+      <div class="privacy-note"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4" y="8" width="12" height="9" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M7 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="12.5" r="1" fill="currentColor"/></svg><span>Your private collection is just one passphrase away.</span></div>
+    </div>
+  </main>
+  <footer class="site-footer"><span>VaultOS</span><span>Private by design</span></footer>
 </div>
-
-<main>
-  <div class="inner">
-    <div class="auth-title">AUTHENTICATE</div>
-    <div class="auth-sub">
-      <span class="auth-sub-line"></span>
-      <span>Private Vault — Local Session</span>
-      <span class="auth-sub-line"></span>
-    </div>
-
-    <div class="card" id="login-card">
-      <div class="cb-bl"></div>
-      <div class="cb-br"></div>
-
-      <div class="card-label"><span>›</span> Enter passphrase to proceed</div>
-
-      <div class="pwd-wrap">
-        <div class="pwd-prefix">_</div>
-        <input id="pwd-input" type="password" placeholder="PASSPHRASE"
-               autocomplete="current-password"
-               onkeydown="if(event.key==='Enter') attemptLogin()"/>
-        <button id="toggle-vis" onclick="toggleVisible()" type="button">SHOW</button>
-      </div>
-
-      <div id="error-msg">⚠ ACCESS DENIED — Invalid Passphrase</div>
-      <div id="loading-bar"></div>
-
-      <button id="login-btn" onclick="attemptLogin()">INITIATE ACCESS</button>
-
-      <div class="card-hint">Single operator · Session expires in 8 hours</div>
-    </div>
-
-    <div id="termlog">
-      <div class="log-header">SYS_LOG</div>
-      <div id="log-lines">
-        <div class="log-line"><span class="log-tag">[SYS]</span> Vault node initialized</div>
-        <div class="log-line"><span class="log-tag">[SYS]</span> Auth module active</div>
-        <div class="log-line"><span class="log-tag">[SYS]</span> Awaiting credentials<span class="cursor">_</span></div>
-      </div>
-    </div>
-  </div>
-</main>
-
-<footer>
-  <span class="ft ft-brand">⬛ ACCESSDENIED</span>
-  <span class="ft ft-info" id="footer-host"></span>
-  <span class="ft ft-info" id="footer-ts"></span>
-</footer>
-
 <script>
-  document.getElementById('footer-host').textContent =
-    window.location.hostname + (window.location.port ? ':' + window.location.port : '');
-
-  const updateTs = () => {
-    document.getElementById('footer-ts').textContent =
-      new Date().toTimeString().split(' ')[0] + ' LOCAL';
-  };
-  setInterval(updateTs, 1000);
-  updateTs();
-
-  function toggleVisible() {
-    const inp = document.getElementById('pwd-input');
-    const btn = document.getElementById('toggle-vis');
-    if (inp.type === 'password') { inp.type = 'text';     btn.textContent = 'HIDE'; }
-    else                         { inp.type = 'password'; btn.textContent = 'SHOW'; }
-  }
-
-  function addLog(msg, type = 'info') {
-    const tags = { info: '[SYS]', warn: '[WARN]', error: '[ERR]', ok: '[OK]' };
-    const div = document.createElement('div');
-    div.className = 'log-line log-' + type;
-    div.innerHTML = `<span class="log-tag">${tags[type]}</span> ${msg}`;
-    const logEl = document.getElementById('log-lines');
-    logEl.appendChild(div);
-    logEl.scrollTop = logEl.scrollHeight;
-  }
-
-  function shakeCard() {
-    const card = document.getElementById('login-card');
-    card.classList.add('shake');
-    setTimeout(() => card.classList.remove('shake'), 600);
-  }
-
+  const input = document.getElementById('pwd-input');
+  const form = document.getElementById('login-form');
+  const toggle = document.getElementById('toggle-vis');
+  const button = document.getElementById('login-btn');
+  const buttonText = document.getElementById('login-btn-text');
+  const errorMessage = document.getElementById('login-error');
+  const errorText = document.getElementById('error-text');
+  const statusLine = document.getElementById('login-status');
+  const loginCard = document.getElementById('login-card');
+  const laser = document.getElementById('scan-laser');
+  const sessionState = document.getElementById('session-state');
+  const themeToggle = document.getElementById('theme-toggle');
   let isLoading = false;
+  let redirectTimer;
 
-  async function attemptLogin() {
+  document.getElementById('footer-host').textContent = window.location.hostname + (window.location.port ? ':' + window.location.port : '');
+
+  function applyTheme(theme) {
+    const nextTheme = theme === 'light' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = nextTheme;
+    themeToggle.textContent = nextTheme === 'light' ? '☾' : '☼';
+    themeToggle.setAttribute('aria-label', `Switch to ${nextTheme === 'light' ? 'dark' : 'light'} theme`);
+    themeToggle.title = `Switch to ${nextTheme === 'light' ? 'dark' : 'light'} theme`;
+    document.querySelector('meta[name="theme-color"]').content = nextTheme === 'light' ? '#e9e9e8' : '#08090d';
+  }
+  applyTheme(localStorage.getItem('vault_theme') || 'dark');
+  themeToggle.addEventListener('click', () => {
+    const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('vault_theme', nextTheme);
+    applyTheme(nextTheme);
+  });
+
+  toggle.addEventListener('click', () => {
+    const showing = input.type === 'password';
+    input.type = showing ? 'text' : 'password';
+    toggle.textContent = showing ? 'HIDE' : 'SHOW';
+    toggle.setAttribute('aria-label', showing ? 'Hide passphrase' : 'Show passphrase');
+    toggle.setAttribute('aria-pressed', String(showing));
+    input.focus();
+  });
+  input.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (input.type === 'text') {
+      input.type = 'password';
+      toggle.textContent = 'SHOW';
+      toggle.setAttribute('aria-label', 'Show passphrase');
+      toggle.setAttribute('aria-pressed', 'false');
+    } else {
+      input.blur();
+    }
+  });
+
+  function resetFeedback() {
+    errorMessage.classList.remove('visible');
+    statusLine.className = 'status-line';
+    statusLine.textContent = '';
+  }
+
+  function showError(message) {
+    statusLine.className = 'status-line';
+    statusLine.textContent = '';
+    errorText.textContent = message;
+    errorMessage.classList.add('visible');
+  }
+
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
     if (isLoading) return;
-    const pwd = document.getElementById('pwd-input').value.trim();
-    if (!pwd) { shakeCard(); addLog('Empty passphrase rejected', 'warn'); return; }
+    const password = input.value.trim();
+    if (!password) {
+      showError('Enter your passphrase to continue.');
+      input.focus();
+      return;
+    }
 
     isLoading = true;
-    const btn     = document.getElementById('login-btn');
-    const errMsg  = document.getElementById('error-msg');
-    const loadBar = document.getElementById('loading-bar');
-
-    btn.textContent = 'AUTHENTICATING...';
-    btn.disabled    = true;
-    errMsg.style.display  = 'none';
-    loadBar.style.display = 'block';
-    addLog('Passphrase received — verifying...', 'info');
+    resetFeedback();
+    loginCard.classList.add('is-busy');
+    laser.classList.remove('active');
+    void laser.offsetWidth;
+    laser.classList.add('active');
+    input.setAttribute('aria-busy', 'true');
+    button.disabled = true;
+    buttonText.textContent = 'Verifying passphrase';
+    sessionState.textContent = 'Checking your passphrase…';
 
     try {
-      const res  = await fetch('/api/login', {
-        method:  'POST',
+      const response = await fetch('/api/login', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ password: pwd }),
+        body: JSON.stringify({ password })
       });
-      const data = await res.json();
-
-      if (res.ok && data.ok) {
-        addLog('Identity confirmed — session established', 'ok');
-        addLog('Redirecting to vault...', 'ok');
-        btn.textContent = 'ACCESS GRANTED';
-        btn.style.background = '#1a6e3a';
-        btn.style.animation  = 'none';
-        setTimeout(() => { window.location.href = '/app'; }, 600);
-      } else if (res.status === 429) {
-        throw new Error('rate_limited');
-      } else {
-        throw new Error('denied');
+      const data = await response.json();
+      if (response.ok && data.ok) {
+        loginCard.classList.remove('is-busy');
+        loginCard.classList.add('is-unlocked');
+        document.body.classList.add('is-unlocking');
+        input.setAttribute('aria-busy', 'false');
+        buttonText.textContent = 'Vault unlocked';
+        sessionState.textContent = 'Opening your library…';
+        statusLine.className = 'status-line visible success';
+        statusLine.textContent = 'Passphrase verified · entering your library';
+        redirectTimer = window.setTimeout(() => { window.location.href = '/app'; }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 120 : 780);
+        return;
       }
-    } catch (err) {
-      isLoading = false;
-      btn.textContent = 'INITIATE ACCESS';
-      btn.disabled    = false;
-      loadBar.style.display = 'none';
-      errMsg.style.display  = 'block';
-      errMsg.textContent = err && err.message === 'rate_limited'
-        ? '⚠ TOO MANY ATTEMPTS — TRY AGAIN LATER'
-        : '⚠ ACCESS DENIED — Invalid Passphrase';
-      addLog(err && err.message === 'rate_limited'
-        ? 'Rate limit reached — locked out temporarily'
-        : 'Passphrase rejected — unauthorised', 'error');
-      shakeCard();
-      document.getElementById('pwd-input').value = '';
-      document.getElementById('pwd-input').focus();
+      showError(response.status === 429
+        ? 'Too many attempts. Please wait before trying again.'
+        : 'That passphrase didn’t match. Please try again.');
+    } catch {
+      showError('VaultOS could not be reached. Check that it is running and try again.');
     }
-  }
 
-  window.onload = () => {
-    document.getElementById('pwd-input').focus();
-    fetch('/api/check')
-      .then(r => r.json())
-      .then(d => { if (d.authenticated) window.location.href = '/app'; })
-      .catch(() => {});
-  };
+    isLoading = false;
+    loginCard.classList.remove('is-busy');
+    laser.classList.remove('active');
+    input.setAttribute('aria-busy', 'false');
+    button.disabled = false;
+    buttonText.textContent = 'Unlock vault';
+    sessionState.textContent = 'Vault ready when you are';
+    input.value = '';
+    input.focus();
+  });
+
+  if (window.matchMedia('(min-width: 761px)').matches) input.focus({ preventScroll: true });
+  fetch('/api/check').then(response => response.json()).then(data => {
+    if (data.authenticated) window.location.href = '/app';
+  }).catch(() => {});
+
+  window.addEventListener('pagehide', () => window.clearTimeout(redirectTimer), { once: true });
 </script>
 </body>
 </html>
