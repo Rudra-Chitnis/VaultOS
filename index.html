@@ -1196,6 +1196,7 @@ html[data-theme="light"] #gw #gc .c .cf.on{background:rgba(200,63,71,.88);color:
 @keyframes peopleShimmer{to{background-position:-220% 0}}
 #people-skeletons.on~#pggrid{display:none}
 #people-skeletons.on~#ppload{display:none}
+#people-skeletons{display:none}
 #person-context{max-width:1540px;min-height:226px;display:none;align-items:stretch;gap:22px;margin:0 auto 25px;padding:0;overflow:hidden;border:1px solid var(--border-1);border-radius:var(--radius-lg);background:var(--surface-1);box-shadow:var(--shadow-card)}
 #person-context.on{display:flex}
 #ppbody:not(.people-overview) #people-intro{display:none}
@@ -1568,7 +1569,6 @@ const GAP      = 4;    // px gap used by People media
 let galleryGap = window.innerWidth < 640 ? 5 : 8;
 const OVERSCAN = 2;    // extra rows above/below viewport to keep rendered
 const MAX_LOAD = 6;    // max simultaneous thumb loads
-const PRIORITY_LOAD_BONUS = 4; // keep person media moving past slow hidden-gallery requests
 
 // ─────────────────────────────────────────────────────────────
 //  STATE
@@ -1783,23 +1783,13 @@ function layout() {
 // ─────────────────────────────────────────────────────────────
 //  IMAGE LOAD QUEUE  —  prevents simultaneous request flood
 // ─────────────────────────────────────────────────────────────
-function qLoad(img, src, onDone, priority = false) {
-  const entry = { img, src, onDone, priority };
-  if (priority) {
-    // Person detail shares the gallery's thumbnail queue. Hidden gallery cards
-    // can otherwise leave a long tail ahead of the media the user just opened.
-    const firstBackgroundLoad = loadQ.findIndex(queued => !queued.priority);
-    loadQ.splice(firstBackgroundLoad < 0 ? loadQ.length : firstBackgroundLoad, 0, entry);
-  } else {
-    loadQ.push(entry);
-  }
+function qLoad(img, src, onDone) {
+  loadQ.push({ img, src, onDone });
   pump();
 }
 
 function pump() {
-  while (loadQ.length) {
-    const loadLimit = loadQ[0].priority ? MAX_LOAD + PRIORITY_LOAD_BONUS : MAX_LOAD;
-    if (loadActive >= loadLimit) break;
+  while (loadActive < MAX_LOAD && loadQ.length) {
     const { img, src, onDone } = loadQ.shift();
     // Skip if element removed from DOM
     if (!document.contains(img)) continue;
@@ -1877,7 +1867,6 @@ function bindCard(el, item, idx, ctxItems = null) {
   const play   = el.querySelector('.cp');
   const noth   = el.querySelector('.cn');
   const ovName = el.querySelector('.c-ov-name');
-  const prioritizeThumb = ctxItems === pdItems && pdPersonId !== null;
   const faceCount = (item.facePersonIds || []).length;
 
   img.src = '';
@@ -1936,7 +1925,7 @@ function bindCard(el, item, idx, ctxItems = null) {
           if (el._item !== item) return;
           if (ok2) { img.classList.add('v'); if (bgImg) bgImg.src = item.url; }
           else noth.style.display = 'flex';
-        }, prioritizeThumb);
+        });
         return;
       }
       if (retries < MAX_RETRIES) {
@@ -1947,7 +1936,7 @@ function bindCard(el, item, idx, ctxItems = null) {
       }
       el.classList.remove('sk');
       noth.style.display = 'flex';
-    }, prioritizeThumb);
+    });
   }
 
   // Always try immediately - thumbs are pre-generated on server
