@@ -1155,6 +1155,118 @@ html[data-theme="light"] #gw #gc .c .cf.on{background:rgba(200,63,71,.88);color:
   #lm-wrap .lm-btn{min-width:29px;padding-inline:5px}
 }
 @media(prefers-reduced-motion:reduce){#gw .c img.ti,#gw .c .cp svg,#gw .c .cf{transition:none!important}#gw .c.sk::after{animation:none!important}}
+
+/* ── Package 5: People as a portrait-led part of the library ── */
+#pp:has(#ppbody.people-overview) #pptitle{display:none}
+#pp:has(#ppbody.people-overview) #ppback{display:none}
+#pp:has(#person-context.on) #pptitle{display:none}
+#pph{min-height:58px;padding:9px 20px;background:var(--surface-0);backdrop-filter:none;border-bottom-color:var(--border-1);gap:10px}
+#ppbody{padding:24px clamp(16px,3vw,42px) 40px;scrollbar-width:thin;scrollbar-color:var(--border-2) transparent}
+#people-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;max-width:1540px;margin:5px auto 27px;padding:4px 0 0}
+.people-intro-copy{max-width:660px}
+.people-intro-kicker,.person-context-kicker{display:block;margin-bottom:9px;color:var(--accent);font:600 10px/1.2 var(--font-ui);letter-spacing:.16em;text-transform:uppercase}
+#people-intro-title{margin:0;color:var(--text-1);font:500 clamp(27px,3vw,38px)/1.06 var(--font-ui);letter-spacing:-.045em}
+#people-intro p{margin:10px 0 0;color:var(--text-2);font:14px/1.5 var(--font-ui);letter-spacing:0}
+#people-count{flex:0 0 auto;margin:0 2px 3px 0;padding:7px 11px;border:1px solid var(--border-1);border-radius:999px;background:var(--surface-1);color:var(--text-2);font:500 11px var(--font-ui);font-variant-numeric:tabular-nums}
+#pggrid{max-width:1540px;margin-inline:auto}
+#ppbody.people-overview #pggrid{grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:16px;align-items:stretch}
+#ppbody.people-overview #pggrid .pgc{min-width:0;min-height:218px;aspect-ratio:.79;padding:0;gap:0;overflow:hidden;isolation:isolate;border:1px solid var(--border-1);border-radius:var(--radius-lg);background:var(--surface-1);box-shadow:var(--shadow-card);transform:translateY(0);transition:border-color var(--motion-normal) var(--ease-standard),box-shadow var(--motion-normal) var(--ease-standard),transform var(--motion-normal) var(--ease-standard)}
+#ppbody.people-overview #pggrid .pgc:hover{transform:translateY(-3px);border-color:var(--border-2);box-shadow:var(--shadow-hover)}
+#ppbody.people-overview #pggrid .pgc:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-halo),var(--shadow-hover)}
+.pg-open{position:absolute;inset:0;display:block;width:100%;height:100%;padding:0;border:0;border-radius:inherit;background:transparent;color:inherit;text-align:left;cursor:pointer;overflow:hidden}
+.pg-open:focus-visible{outline:none!important;box-shadow:none!important}
+#ppbody.people-overview #pggrid .pgc .pgav{position:absolute;inset:0;width:auto;height:auto;aspect-ratio:auto;overflow:hidden;border:0;border-radius:inherit;background:linear-gradient(145deg,var(--surface-2),var(--surface-3));transition:transform 420ms var(--ease-standard)}
+#ppbody.people-overview #pggrid .pgc .pgav img{width:100%;height:100%;object-fit:cover;object-position:center 34%;display:block;transition:transform 500ms var(--ease-standard),filter 300ms var(--ease-standard)}
+.pg-open:hover .pgav img,.pg-open:focus-visible .pgav img{transform:scale(1.035);filter:saturate(1.04)}
+.pgav::after{content:'';position:absolute;inset:22% 0 0;background:linear-gradient(180deg,transparent 5%,rgba(9,10,16,.12) 28%,rgba(9,10,16,.88) 100%);pointer-events:none}
+.pgav svg{position:absolute;left:50%;top:40%;width:48px;height:48px;transform:translate(-50%,-50%);color:var(--text-3);opacity:.55}
+.pg-card-copy{position:absolute;z-index:1;right:0;bottom:0;left:0;display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:24px 15px 15px;color:#fff;pointer-events:none}
+.pg-card-kicker{color:rgba(255,255,255,.68);font:600 9px/1.2 var(--font-ui);letter-spacing:.13em;text-transform:uppercase}
+#ppbody.people-overview .pgn{max-width:100%;color:#fff;text-align:left;font:600 16px/1.18 var(--font-ui);letter-spacing:-.02em;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;text-shadow:0 1px 12px rgba(0,0,0,.32)}
+#ppbody.people-overview .pgct{color:rgba(255,255,255,.88);text-align:left;font:500 11px/1.35 var(--font-ui);letter-spacing:0}
+.pgfc{color:rgba(255,255,255,.62);font:10px/1.3 var(--font-ui);font-variant-numeric:tabular-nums}
+.pg-menu-btn{top:10px;right:10px;width:38px;height:38px;border:1px solid rgba(255,255,255,.34);border-radius:50%;background:rgba(15,16,20,.46);color:#fff;opacity:0;backdrop-filter:blur(10px);transition:opacity var(--motion-fast) var(--ease-standard),background var(--motion-fast) var(--ease-standard),transform var(--motion-fast) var(--ease-standard)}
+.pgc:hover .pg-menu-btn,.pgc:focus-within .pg-menu-btn{opacity:1}
+.pg-menu-btn:hover{background:rgba(15,16,20,.78);transform:scale(1.04)}
+#ppbody.people-overview #people-skeletons{display:none;max-width:1540px;margin:0 auto 16px;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:16px}
+#ppbody.people-overview #people-skeletons.on{display:grid}
+#people-skeletons.on{display:grid}
+.people-skeleton{position:relative;min-height:218px;aspect-ratio:.79;overflow:hidden;border:1px solid var(--border-1);border-radius:var(--radius-lg);background:linear-gradient(145deg,var(--surface-1),var(--surface-2))}
+.people-skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 25%,rgba(255,255,255,.06) 48%,transparent 70%);background-size:220% 100%;animation:peopleShimmer 2.1s ease-in-out infinite}
+@keyframes peopleShimmer{to{background-position:-220% 0}}
+#people-skeletons.on~#pggrid{display:none}
+#people-skeletons.on~#ppload{display:none}
+#person-context{max-width:1540px;min-height:226px;display:none;align-items:stretch;gap:22px;margin:0 auto 25px;padding:0;overflow:hidden;border:1px solid var(--border-1);border-radius:var(--radius-lg);background:var(--surface-1);box-shadow:var(--shadow-card)}
+#person-context.on{display:flex}
+#ppbody:not(.people-overview) #people-intro{display:none}
+.person-context-avatar{position:relative;flex:0 0 168px;min-height:226px;overflow:hidden;background:linear-gradient(145deg,var(--surface-2),var(--surface-3))}
+.person-context-avatar img{width:100%;height:100%;min-height:226px;display:block;object-fit:cover;object-position:center 32%}
+#person-context-img[hidden]{display:none}
+.person-context-avatar::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 68%,var(--surface-1) 100%);pointer-events:none}
+.person-context-avatar svg{position:absolute;left:50%;top:50%;width:45px;height:45px;transform:translate(-50%,-50%);color:var(--text-3);opacity:.55}
+.person-context-copy{display:flex;flex:1;min-width:0;flex-direction:column;justify-content:center;align-items:flex-start;padding:22px 28px 22px 0}
+.person-context-kicker{margin-bottom:8px}
+#person-context-name{max-width:100%;overflow:hidden;color:var(--text-1);font:500 clamp(24px,3vw,36px)/1.1 var(--font-ui);letter-spacing:-.04em;text-overflow:ellipsis;white-space:nowrap}
+.person-context-meta{margin-top:11px;color:var(--text-2);font:12px/1.45 var(--font-ui);font-variant-numeric:tabular-nums}
+.person-context-note{margin-top:4px;color:var(--text-3);font:11px/1.45 var(--font-ui)}
+#ppbody:not(.people-overview) #pggrid{max-width:1540px;margin-inline:auto}
+#pp-progress{background:var(--surface-1);border-bottom-color:var(--border-1)}
+#pp-progress.hide{display:none}
+#pp-progress.ready{padding-block:7px;background:transparent;border-bottom-color:var(--border-1)}
+#pp-progress.ready #pp-prog-bar-wrap,#pp-progress.ready #pp-prog-stats{display:none}
+#pp-prog-stats{gap:12px}
+#pp-prog-stats .pp-stat{flex-direction:row;align-items:baseline;gap:5px}
+#pp-prog-stats .pp-stat-val{font:600 11px var(--font-ui)}
+#pp-prog-stats .pp-stat-lbl{font:10px var(--font-ui);text-transform:none;letter-spacing:0}
+#ppempty{max-width:480px;margin:18px auto;padding:42px 24px;border:1px dashed var(--border-2);border-radius:var(--radius-lg);background:var(--surface-1);color:var(--text-2);font:13px/1.55 var(--font-ui)}
+#ppempty svg{margin-bottom:3px;color:var(--accent);opacity:.72}
+#ppempty strong{color:var(--text-1);font:600 16px/1.3 var(--font-ui)}
+#ppempty p{max-width:320px;margin:0;color:var(--text-2);font:13px/1.55 var(--font-ui)}
+#ppempty .state-action{min-height:40px;padding:0 14px;border:1px solid var(--border-2);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--text-1);font:600 12px var(--font-ui)}
+#ppempty .state-action:hover{border-color:var(--accent);background:var(--accent-soft)}
+html[data-theme="light"] #ppbody.people-overview #pggrid .pgc{background:var(--surface-1);border-color:var(--border-1);box-shadow:var(--shadow-card)}
+html[data-theme="light"] #ppbody.people-overview #pggrid .pgc:hover{background:var(--surface-1);border-color:var(--border-2);box-shadow:var(--shadow-hover)}
+html[data-theme="light"] #ppbody.people-overview .pgav::after{background:linear-gradient(180deg,transparent 5%,rgba(20,20,23,.14) 28%,rgba(20,20,23,.84) 100%)}
+@media(max-width:1023px){#ppbody.people-overview #pggrid{grid-template-columns:repeat(auto-fill,minmax(164px,1fr));gap:14px}#ppbody.people-overview #people-skeletons{grid-template-columns:repeat(auto-fill,minmax(164px,1fr));gap:14px}}
+@media(min-width:641px){#hb{display:none}}
+@media(max-width:640px){
+  #pph{flex-wrap:wrap;gap:8px;padding:8px 12px}
+  #ppback.on{min-height:42px;padding-inline:10px}
+  #pp-sort-wrap{margin-left:auto;padding-left:9px}
+  #scan-wrap{margin-left:0}
+  #pd-actions{order:3;width:100%;justify-content:flex-end;padding-top:5px;border-top:1px solid var(--border-1)}
+  #pd-actions .pd-btn{min-height:38px;padding-inline:9px;font-size:11px}
+  #ppbody{padding:21px 15px 30px}
+  #people-intro{align-items:flex-start;gap:10px;margin:2px auto 20px}
+  #people-intro-title{font-size:29px}
+  #people-intro p{max-width:260px;font-size:13px}
+  #people-count{margin-top:20px;padding:6px 9px;font-size:10px}
+  #ppbody.people-overview #pggrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+  #ppbody.people-overview #pggrid .pgc{min-height:0;aspect-ratio:.78;border-radius:var(--radius-md)}
+  #ppbody.people-overview #people-skeletons{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+  .people-skeleton{min-height:0;aspect-ratio:.78;border-radius:var(--radius-md)}
+  .pg-card-copy{padding:22px 11px 12px;gap:3px}
+  #ppbody.people-overview .pgn{font-size:14px}
+  #ppbody.people-overview .pgct{font-size:10px}
+  .pgfc{font-size:9px}
+  .pg-menu-btn{top:7px;right:7px;width:36px;height:36px;opacity:1}
+  #person-context{min-height:148px;gap:0;margin-bottom:17px;border-radius:var(--radius-md)}
+  .person-context-avatar{flex-basis:112px;min-height:148px}
+  .person-context-avatar img{min-height:148px}
+  .person-context-avatar::after{background:linear-gradient(90deg,transparent 52%,var(--surface-1) 100%)}
+  .person-context-copy{padding:15px 13px 15px 8px}
+  .person-context-kicker{margin-bottom:7px;font-size:8px;letter-spacing:.1em}
+  #person-context-name{font-size:21px;white-space:normal;overflow-wrap:anywhere}
+  .person-context-meta{margin-top:8px;font-size:11px}
+  .person-context-note{font-size:10px}
+  #pp-prog-row{gap:6px}
+  #pp-prog-label{font-size:10px}
+  #pp-prog-stats{gap:8px}
+  /* The toolbar hamburger owns mobile navigation; override the later base rail rule. */
+  #sb #rail-toggle{display:none}
+}
+@media(max-width:370px){#people-count{display:none}#people-intro-title{font-size:26px}.pg-card-copy{padding-inline:9px}#ppbody.people-overview .pgn{font-size:13px}}
+@media(prefers-reduced-motion:reduce){.people-skeleton::after{animation:none}.pgav,.pgav img,.pgc{transition:none!important}}
 </style>
 </head>
 <body>
@@ -1188,7 +1300,7 @@ html[data-theme="light"] #gw #gc .c .cf.on{background:rgba(200,63,71,.88);color:
 
 <div id="main">
   <div id="tb">
-    <button id="hb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <button id="hb" aria-label="Open navigation menu" aria-expanded="false" aria-controls="sb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
     <div id="sw">
       <svg id="si" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input id="search" type="text" placeholder="Search files, people…" autocomplete="off"/>
@@ -1309,10 +1421,22 @@ html[data-theme="light"] #gw #gc .c .cf.on{background:rgba(200,63,71,.88);color:
       <div id="pp-prog-stats"></div>
     </div>
     <div id="ppbody">
-      <section id="person-context" aria-label="Person media summary"><span class="person-context-meta"></span></section>
+      <section id="people-intro" aria-labelledby="people-intro-title">
+        <div class="people-intro-copy">
+          <span class="people-intro-kicker">THE PEOPLE IN YOUR VAULT</span>
+          <h1 id="people-intro-title">Faces, names, familiar moments.</h1>
+          <p>A visual collection of the people woven through your memories.</p>
+        </div>
+        <span id="people-count" aria-live="polite"></span>
+      </section>
+      <section id="person-context" aria-label="Person media summary">
+        <div class="person-context-avatar"><img id="person-context-img" alt="" hidden/><svg id="person-context-fallback" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg></div>
+        <div class="person-context-copy"><span class="person-context-kicker">A COLLECTION OF MOMENTS</span><strong id="person-context-name"></strong><span class="person-context-meta"></span><span class="person-context-note">Memories from across your vault</span></div>
+      </section>
+      <div id="people-skeletons" aria-hidden="true"><div class="people-skeleton"></div><div class="people-skeleton"></div><div class="people-skeleton"></div><div class="people-skeleton"></div><div class="people-skeleton"></div><div class="people-skeleton"></div></div>
       <div id="pggrid"></div>
       <div id="ppload"><div id="ppsp"></div></div>
-      <div id="ppempty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>No people indexed yet.<br>Run a face scan to get started.</div>
+      <div id="ppempty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg><strong>No people here yet</strong><p>Start a face scan to find familiar faces in your library.</p><button class="state-action" type="button" data-open-scan>Review scan options</button></div>
     </div>
   </div>
 </div>
@@ -1444,6 +1568,7 @@ const GAP      = 4;    // px gap used by People media
 let galleryGap = window.innerWidth < 640 ? 5 : 8;
 const OVERSCAN = 2;    // extra rows above/below viewport to keep rendered
 const MAX_LOAD = 6;    // max simultaneous thumb loads
+const PRIORITY_LOAD_BONUS = 4; // keep person media moving past slow hidden-gallery requests
 
 // ─────────────────────────────────────────────────────────────
 //  STATE
@@ -1573,8 +1698,16 @@ const vpcTimeEl  = document.getElementById('vpc-time');
 // ─────────────────────────────────────────────────────────────
 //  HAMBURGER
 // ─────────────────────────────────────────────────────────────
-document.getElementById('hb').onclick = () => { sbEl.classList.toggle('on'); ovEl.classList.toggle('on'); };
-ovEl.onclick = () => { sbEl.classList.remove('on'); ovEl.classList.remove('on'); };
+const mobileMenuButtonEl = document.getElementById('hb');
+function setMobileDrawerOpen(open) {
+  const isOpen = !!open;
+  sbEl.classList.toggle('on', isOpen);
+  ovEl.classList.toggle('on', isOpen);
+  mobileMenuButtonEl.setAttribute('aria-expanded', String(isOpen));
+  mobileMenuButtonEl.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+}
+mobileMenuButtonEl.onclick = () => setMobileDrawerOpen(!sbEl.classList.contains('on'));
+ovEl.onclick = () => setMobileDrawerOpen(false);
 
 // ─────────────────────────────────────────────────────────────
 //  LAYOUT  (Phase B: multi-mode)
@@ -1650,13 +1783,23 @@ function layout() {
 // ─────────────────────────────────────────────────────────────
 //  IMAGE LOAD QUEUE  —  prevents simultaneous request flood
 // ─────────────────────────────────────────────────────────────
-function qLoad(img, src, onDone) {
-  loadQ.push({ img, src, onDone });
+function qLoad(img, src, onDone, priority = false) {
+  const entry = { img, src, onDone, priority };
+  if (priority) {
+    // Person detail shares the gallery's thumbnail queue. Hidden gallery cards
+    // can otherwise leave a long tail ahead of the media the user just opened.
+    const firstBackgroundLoad = loadQ.findIndex(queued => !queued.priority);
+    loadQ.splice(firstBackgroundLoad < 0 ? loadQ.length : firstBackgroundLoad, 0, entry);
+  } else {
+    loadQ.push(entry);
+  }
   pump();
 }
 
 function pump() {
-  while (loadActive < MAX_LOAD && loadQ.length) {
+  while (loadQ.length) {
+    const loadLimit = loadQ[0].priority ? MAX_LOAD + PRIORITY_LOAD_BONUS : MAX_LOAD;
+    if (loadActive >= loadLimit) break;
     const { img, src, onDone } = loadQ.shift();
     // Skip if element removed from DOM
     if (!document.contains(img)) continue;
@@ -1734,6 +1877,7 @@ function bindCard(el, item, idx, ctxItems = null) {
   const play   = el.querySelector('.cp');
   const noth   = el.querySelector('.cn');
   const ovName = el.querySelector('.c-ov-name');
+  const prioritizeThumb = ctxItems === pdItems && pdPersonId !== null;
   const faceCount = (item.facePersonIds || []).length;
 
   img.src = '';
@@ -1792,7 +1936,7 @@ function bindCard(el, item, idx, ctxItems = null) {
           if (el._item !== item) return;
           if (ok2) { img.classList.add('v'); if (bgImg) bgImg.src = item.url; }
           else noth.style.display = 'flex';
-        });
+        }, prioritizeThumb);
         return;
       }
       if (retries < MAX_RETRIES) {
@@ -1803,7 +1947,7 @@ function bindCard(el, item, idx, ctxItems = null) {
       }
       el.classList.remove('sk');
       noth.style.display = 'flex';
-    });
+    }, prioritizeThumb);
   }
 
   // Always try immediately - thumbs are pre-generated on server
@@ -2400,7 +2544,7 @@ function setType(t, preserveSearch = false) {
   }
   ctype = t;
   document.querySelectorAll('.ft,.snb').forEach(b => b.classList.toggle('on', b.dataset.t === t));
-  sbEl.classList.remove('on'); ovEl.classList.remove('on');
+  setMobileDrawerOpen(false);
   fetchPage(true).then(() => restoreScroll(`gallery_${t}`));
 }
 document.querySelectorAll('.ft,.snb[data-t]').forEach(b => b.addEventListener('click', () => setType(b.dataset.t)));
@@ -2903,7 +3047,7 @@ function showPeopleView() {
   ppEl.classList.add('on');
   document.querySelectorAll('.snb').forEach(b => b.classList.remove('on'));
   document.getElementById('nav-people').classList.add('on');
-  sbEl.classList.remove('on'); ovEl.classList.remove('on');
+  setMobileDrawerOpen(false);
   document.getElementById('ppback').classList.remove('on');
   document.getElementById('pptitle').textContent = 'People';
   // Reset detail state and invalidate any in-flight person-media request.
@@ -2941,7 +3085,7 @@ function navigateToPerson(p) {
     ppEl.classList.add('on');
     document.querySelectorAll('.snb').forEach(b => b.classList.remove('on'));
     document.getElementById('nav-people').classList.add('on');
-    sbEl.classList.remove('on'); ovEl.classList.remove('on');
+    setMobileDrawerOpen(false);
     document.getElementById('ppback').classList.remove('on');
     document.getElementById('pptitle').textContent = 'People';
     pdPersonId = null; _curPerson = null;
@@ -2993,6 +3137,10 @@ const pdActEl     = document.getElementById('pd-actions');
 const ppSortWrapEl = document.getElementById('pp-sort-wrap');
 const ppSortSelEl  = document.getElementById('pp-sort-sel');
 const personContextEl = document.getElementById('person-context');
+const personContextImgEl = document.getElementById('person-context-img');
+const personContextFallbackEl = document.getElementById('person-context-fallback');
+const peopleSkeletonsEl = document.getElementById('people-skeletons');
+const peopleCountEl = document.getElementById('people-count');
 
 // ── Scroll-aware top chrome ──────────────────────────────────
 // Each gallery owns its scroll container, so one small direction controller is
@@ -3037,7 +3185,18 @@ function updatePersonContext(person) {
   if (!person || pdPersonId === null) { personContextEl.classList.remove('on'); return; }
   const media = person.mediaCount ?? person.media_count ?? null;
   const faces = person.faceCount ?? person.face_count ?? 0;
-  personContextEl.querySelector('.person-context-meta').textContent = `${media === null ? '' : `${media} file${media === 1 ? '' : 's'} · `}${faces} face${faces === 1 ? '' : 's'}`;
+  const thumb = person.coverThumb || person.cover_thumb || null;
+  const displayName = person.name || `Person ${person.id}`;
+  document.getElementById('person-context-name').textContent = displayName;
+  const meta = [];
+  if (media !== null) meta.push(`${Number(media).toLocaleString()} ${media === 1 ? 'memory' : 'memories'}`);
+  if (faces !== null) meta.push(`${Number(faces).toLocaleString()} ${faces === 1 ? 'face' : 'faces'}`);
+  personContextEl.querySelector('.person-context-meta').textContent = meta.join(' · ');
+  personContextImgEl.hidden = !thumb;
+  personContextFallbackEl.hidden = !!thumb;
+  personContextImgEl.onerror = () => { personContextImgEl.hidden = true; personContextFallbackEl.hidden = false; };
+  if (thumb) personContextImgEl.src = thumb;
+  else personContextImgEl.removeAttribute('src');
   personContextEl.classList.add('on');
 }
 
@@ -3066,6 +3225,7 @@ async function loadPeople(reset = true) {
     ppPage = 0;
     ppMore = true;
     ppgridEl.innerHTML = '';
+    peopleSkeletonsEl.classList.toggle('on', viewMode === 'people' && pdPersonId === null);
   }
 
   try {
@@ -3076,12 +3236,14 @@ async function loadPeople(reset = true) {
     if (r.status === 401) { location.href = '/login.html'; return; }
     const d = await r.json();
     if (generation !== ppLoadGeneration || viewMode !== 'people' || pdPersonId !== null) return;
+    peopleCountEl.textContent = `${Number(d.total || 0).toLocaleString()} ${d.total === 1 ? 'person' : 'people'}`;
 
     ppMore = (ppPage + 1) * 60 < d.total;
     ppPage++;
 
     if (d.items.length === 0 && ppPage === 1) {
       ppemptyEl.style.display = 'flex';
+      ppemptyEl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg><strong>No people here yet</strong><p>Start a face scan to find familiar faces in your library.</p><button class="state-action" type="button" data-open-scan>Review scan options</button>';
     } else {
       d.items.forEach(p => renderPersonCard(p));
     }
@@ -3096,6 +3258,7 @@ async function loadPeople(reset = true) {
     if (generation === ppLoadGeneration) {
       ppLoading = false;
       ppspEl.classList.remove('on');
+      peopleSkeletonsEl.classList.remove('on');
     }
   }
 }
@@ -3109,18 +3272,18 @@ async function loadPeopleFiltered(q) {
   ppemptyEl.style.display = 'none';
   ppPage = 0; ppMore = true;
   ppgridEl.innerHTML = '';
+  peopleSkeletonsEl.classList.toggle('on', viewMode === 'people' && pdPersonId === null);
   try {
     const r = await fetch(`/api/faces/persons?limit=60&offset=0&search=${encodeURIComponent(q)}&sort=${encodeURIComponent(ppsort)}`);
     if (generation !== ppLoadGeneration || viewMode !== 'people' || pdPersonId !== null) return;
     if (r.status === 401) { location.href = '/login.html'; return; }
     const d = await r.json();
     if (generation !== ppLoadGeneration || viewMode !== 'people' || pdPersonId !== null) return;
+    peopleCountEl.textContent = `${Number(d.total || 0).toLocaleString()} ${d.total === 1 ? 'person' : 'people'}`;
     ppMore = 60 < d.total; ppPage = 1;
     if (!d.items.length) {
       ppemptyEl.style.display = 'flex';
-      ppemptyEl.innerHTML =
-        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:32px;height:32px;opacity:.25"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>` +
-        `No clusters matching "<b style="color:var(--t2)">${q}</b>"`;
+      ppemptyEl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg><strong>No people match that search</strong><p>Try a different name or clear the search to browse everyone.</p>';
     } else {
       d.items.forEach(p => renderPersonCard(p));
     }
@@ -3132,72 +3295,117 @@ async function loadPeopleFiltered(q) {
     ppemptyEl.innerHTML = `Couldn’t search People.<br><button class="state-action" data-retry-people>Retry</button>`;
   }
   finally {
-    if (generation === ppLoadGeneration) { ppLoading = false; ppspEl.classList.remove('on'); }
+    if (generation === ppLoadGeneration) { ppLoading = false; ppspEl.classList.remove('on'); peopleSkeletonsEl.classList.remove('on'); }
   }
 }
 
 // Tracks the currently open context menu so we can close it on outside-click
 let _openCtxMenu = null;
-ppemptyEl.addEventListener('click', e => { if (e.target.closest('[data-retry-people]')) loadPeople(srchEl.value.trim() === ''); });
-document.addEventListener('click', () => {
-  if (_openCtxMenu) { _openCtxMenu.classList.remove('on'); _openCtxMenu = null; }
+ppemptyEl.addEventListener('click', e => {
+  if (e.target.closest('[data-retry-people]')) loadPeople(srchEl.value.trim() === '');
+  if (e.target.closest('[data-open-scan]')) document.getElementById('scan-toggle').click();
+});
+document.addEventListener('click', e => {
+  if (e.target.closest('.pg-menu-btn,.pg-ctx')) return;
+  if (_openCtxMenu) {
+    _openCtxMenu.classList.remove('on');
+    _openCtxMenu.closest('.pgc')?.querySelector('.pg-menu-btn')?.setAttribute('aria-expanded', 'false');
+    _openCtxMenu = null;
+  }
 }, true);
 
 function renderPersonCard(person) {
-  const card = document.createElement('div');
+  const card = document.createElement('article');
   card.className = 'pgc';
   const displayName = person.name || `Person ${person.id}`;
-  updatePersonContext(person);
   const thumb = person.coverThumb || null;
   // Primary count is media files (AI-detected + manually assigned, deduped) —
   // NOT the raw AI face_count. Face count remains available as secondary info.
   const mediaCount = person.mediaCount ?? person.media_count ?? 0;
   const faceCount  = person.faceCount  ?? person.face_count  ?? 0;
+  const openButton = document.createElement('button');
+  openButton.type = 'button';
+  openButton.className = 'pg-open';
+  openButton.setAttribute('aria-label', `Open ${displayName}`);
+  const avatar = document.createElement('span');
+  avatar.className = 'pgav';
+  const fallback = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  fallback.setAttribute('viewBox', '0 0 24 24');
+  fallback.setAttribute('fill', 'none');
+  fallback.setAttribute('stroke', 'currentColor');
+  fallback.setAttribute('stroke-width', '1.5');
+  fallback.setAttribute('aria-hidden', 'true');
+  fallback.hidden = !!thumb;
+  fallback.style.display = thumb ? 'none' : 'block';
+  fallback.innerHTML = '<circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/>';
+  if (thumb) {
+    const image = document.createElement('img');
+    image.alt = '';
+    image.loading = 'lazy';
+    image.decoding = 'async';
+    image.src = thumb;
+    image.addEventListener('error', () => { image.remove(); fallback.style.display = 'block'; }, { once: true });
+    avatar.appendChild(image);
+  }
+  avatar.appendChild(fallback);
+  const copy = document.createElement('span');
+  copy.className = 'pg-card-copy';
+  const name = document.createElement('span');
+  name.className = 'pgn';
+  name.title = displayName;
+  name.textContent = displayName;
+  const memories = document.createElement('span');
+  memories.className = 'pgct';
+  memories.textContent = `${Number(mediaCount).toLocaleString()} ${mediaCount === 1 ? 'memory' : 'memories'}`;
+  const faces = document.createElement('span');
+  faces.className = 'pgfc';
+  faces.textContent = `${Number(faceCount).toLocaleString()} ${faceCount === 1 ? 'face' : 'faces'} in cluster`;
+  copy.append(name, memories, faces);
+  openButton.append(avatar, copy);
 
-  card.innerHTML =
-    `<div class="pgav">${
-      thumb
-        ? `<img src="${thumb}" alt="" onerror="this.style.display='none';this.nextSibling.style.display='block'"/><svg style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>`
-        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>`
-    }</div>` +
-    `<div class="pgn" title="${displayName}">${displayName}</div>` +
-    `<div class="pgct">${mediaCount} file${mediaCount === 1 ? '' : 's'} · ${faceCount} face${faceCount === 1 ? '' : 's'}</div>` +
-    // ⋮ context button
-    `<button class="pg-menu-btn" title="Options" tabindex="-1">⋮</button>` +
-    // Dropdown context menu
-    `<div class="pg-ctx">` +
-      `<button class="pg-ctx-item" data-action="rename">✎ Rename</button>` +
-      `<button class="pg-ctx-item" data-action="merge">⊕ Merge into…</button>` +
-      `<button class="pg-ctx-item danger" data-action="delete">✕ Delete</button>` +
-    `</div>`;
-
-  const ctx  = card.querySelector('.pg-ctx');
-  const mbtn = card.querySelector('.pg-menu-btn');
+  const mbtn = document.createElement('button');
+  mbtn.type = 'button';
+  mbtn.className = 'pg-menu-btn';
+  mbtn.title = 'Person options';
+  mbtn.setAttribute('aria-label', `Options for ${displayName}`);
+  mbtn.setAttribute('aria-expanded', 'false');
+  mbtn.textContent = '⋮';
+  const ctx = document.createElement('div');
+  ctx.className = 'pg-ctx';
+  ctx.innerHTML = '<button class="pg-ctx-item" data-action="rename" type="button">✎ Rename</button><button class="pg-ctx-item" data-action="merge" type="button">⊕ Merge into…</button><button class="pg-ctx-item danger" data-action="delete" type="button">✕ Delete</button>';
+  card.append(openButton, mbtn, ctx);
 
   // ⋮ button — toggle context menu
   mbtn.addEventListener('click', e => {
     e.stopPropagation();
     const wasOpen = ctx.classList.contains('on');
-    if (_openCtxMenu) { _openCtxMenu.classList.remove('on'); }
-    if (!wasOpen) { ctx.classList.add('on'); _openCtxMenu = ctx; }
-    else { _openCtxMenu = null; }
+    if (_openCtxMenu) {
+      _openCtxMenu.classList.remove('on');
+      _openCtxMenu.closest('.pgc')?.querySelector('.pg-menu-btn')?.setAttribute('aria-expanded', 'false');
+    }
+    if (!wasOpen) { ctx.classList.add('on'); _openCtxMenu = ctx; mbtn.setAttribute('aria-expanded', 'true'); }
+    else { _openCtxMenu = null; mbtn.setAttribute('aria-expanded', 'false'); }
+  });
+  mbtn.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && ctx.classList.contains('on')) {
+      e.preventDefault();
+      ctx.classList.remove('on');
+      mbtn.setAttribute('aria-expanded', 'false');
+      _openCtxMenu = null;
+    }
   });
 
   // Context menu items
   ctx.addEventListener('click', e => {
     e.stopPropagation();
-    const action = e.target.dataset.action;
-    ctx.classList.remove('on'); _openCtxMenu = null;
+    const action = e.target.closest('[data-action]')?.dataset.action;
+    ctx.classList.remove('on'); _openCtxMenu = null; mbtn.setAttribute('aria-expanded', 'false');
     if (action === 'rename') openRenameModal(person.id, displayName);
     if (action === 'merge')  openMergeModal(person.id, displayName);
     if (action === 'delete') confirmDeletePerson(person.id, displayName, card);
   });
 
-  // Card body click → open detail
-  card.addEventListener('click', e => {
-    if (e.target.closest('.pg-menu-btn') || e.target.closest('.pg-ctx')) return;
-    openPersonDetail(person);
-  });
+  openButton.addEventListener('click', () => openPersonDetail(person));
 
   ppgridEl.appendChild(card);
 }
@@ -3298,6 +3506,7 @@ async function openPersonDetail(personOrId, legacyName) {
   ppLoadGeneration++;
   ppLoading = false;
   ppspEl.classList.remove('on');
+  peopleSkeletonsEl.classList.remove('on');
   saveScroll();          // preserve people_list scroll before entering detail
   // Accept either a full person object or just an id (backwards compat)
   const person = (typeof personOrId === 'object' && personOrId !== null)
@@ -3630,6 +3839,7 @@ document.getElementById('modal-rename-ok').addEventListener('click', async () =>
         _curPerson.name = name || null;
         const displayName = name || `Person ${_curPerson.id}`;
         document.getElementById('pptitle').textContent = displayName;
+        updatePersonContext(_curPerson);
       }
       if (pdPersonId === null) loadPeople(true); // refresh grid if in list view
     } else {
@@ -3853,6 +4063,13 @@ function updateProgressPanel(d) {
   const isIdle    = state === 'idle' || (state === 'running' && !(d.queued || d.processing));
   const isPaused  = state === 'paused';
   const isOk      = isRunning || isIdle || isPaused;
+  const hasErrors = Number(d.errors || 0) > 0;
+
+  // The people collection is the landing experience; a healthy idle scanner
+  // recedes to a compact ready row, while active work and errors stay visible.
+  if (isIdle && !hasErrors) {
+    if (_autoRefreshTimer) { clearInterval(_autoRefreshTimer); _autoRefreshTimer = null; }
+  }
 
   // Show/hide panel: hide only when completely unavailable and no data at all
   const hasData = d.personCount != null || d.faceCount != null || d.queued != null;
@@ -3861,6 +4078,7 @@ function updateProgressPanel(d) {
     return;
   }
   ppProgEl.classList.remove('hide');
+  ppProgEl.classList.toggle('ready', isIdle && !hasErrors);
 
   // Dot colour
   ppProgDot.className = '';
@@ -3895,9 +4113,7 @@ function updateProgressPanel(d) {
   if (isRunning && !isIdle) {
     label = `Indexing — ${fmtNum(done)} / ${fmtNum(total)} files`;
   } else if (isIdle) {
-    label = d.personCount != null
-      ? `${fmtNum(d.personCount)} people · ${fmtNum(d.faceCount || 0)} faces`
-      : 'Index ready';
+    label = 'Index ready';
   } else {
     label = STATE_LABELS[state] || state;
   }
@@ -3916,7 +4132,7 @@ function updateProgressPanel(d) {
   ).join('');
 
   // Auto-refresh people list while scanning (every 15s when on people page)
-  if (isRunning && viewMode === 'people' && pdPersonId === null) {
+  if (isRunning && !isIdle && viewMode === 'people' && pdPersonId === null) {
     if (!_autoRefreshTimer) {
       _autoRefreshTimer = setInterval(() => {
         if (viewMode === 'people' && pdPersonId === null) {
@@ -4665,9 +4881,17 @@ const previewObserver = new IntersectionObserver((entries) => {
   }
   function enhanceDynamic(root = document) {
     root.querySelectorAll('.c:not([data-a11y]),.pgc:not([data-a11y])').forEach(card => {
-      card.dataset.a11y = '1'; card.tabIndex = 0; card.setAttribute('role', card.matches('.c') ? 'group' : 'button');
+      card.dataset.a11y = '1';
+      if (card.matches('.pgc')) {
+        card.setAttribute('role', 'group');
+        card.removeAttribute('tabindex');
+      } else {
+        card.tabIndex = 0;
+        card.setAttribute('role', 'group');
+      }
       const name = card.querySelector('.c-ov-name,.pgn')?.textContent?.trim();
-      card.setAttribute('aria-label', name ? `Open ${name}` : 'Open media');
+      if (card.matches('.pgc')) card.setAttribute('aria-label', name ? `${name} in People` : 'Person');
+      else card.setAttribute('aria-label', name ? `Open ${name}` : 'Open media');
     });
     root.querySelectorAll('.pg-menu-btn:not([aria-label])').forEach(btn => btn.setAttribute('aria-label', 'Person options'));
   }
@@ -4706,7 +4930,7 @@ const previewObserver = new IntersectionObserver((entries) => {
     if (event.key === 'Escape') {
       const menu = document.getElementById('scan-menu');
       if (menu.classList.contains('on')) { document.getElementById('scan-toggle').click(); return; }
-      if (sbEl.classList.contains('on')) { sbEl.classList.remove('on'); ovEl.classList.remove('on'); document.getElementById('hb').focus(); }
+      if (sbEl.classList.contains('on')) { setMobileDrawerOpen(false); mobileMenuButtonEl.focus(); }
     }
   }, true);
   document.addEventListener('keydown', event => {
