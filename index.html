@@ -936,6 +936,111 @@ html[data-theme="light"] #upl-backdrop{background:rgba(35,37,44,.25)}
 #toast-el.err{border-color:var(--danger);box-shadow:var(--shadow-floating)}
 .state-action:hover,.filter-option:hover,.filter-option[aria-pressed="true"],
 .scan-item:hover,.pg-ctx-item:hover{background-color:var(--accent-soft);border-color:var(--accent)}
+
+/* Package 2: the shell frames the library with a quieter rail and one control language. */
+:root{--rail:232px;--rail-c:60px}
+#sb{background:var(--surface-1);backdrop-filter:none;border-right-color:var(--border-1);box-shadow:none}
+.sl{min-height:68px;padding:14px 14px 12px;background:none;border-bottom:1px solid var(--border-1)}
+.sl-brand{gap:1px}
+.slt{font:700 15px/1.1 var(--font-ui);letter-spacing:.16em;color:var(--text-1);text-shadow:none}
+.slt::first-letter{color:var(--accent)}
+.sls{font:11px/1.4 var(--font-ui);letter-spacing:.01em;color:var(--text-3)}
+.snav{padding:12px 0;scrollbar-width:thin;scrollbar-color:var(--border-2) transparent}
+.snl{padding:14px 16px 6px;color:var(--text-3);font:600 10px/1.2 var(--font-ui);letter-spacing:.08em}
+.snb{min-height:40px;gap:11px;margin:1px 8px;padding:8px 10px;width:calc(100% - 16px);border-radius:var(--radius-sm);font:500 13px/1.2 var(--font-ui);color:var(--text-2)}
+.snb:hover{background:var(--surface-2);color:var(--text-1)}
+.snb svg{width:17px;height:17px;opacity:.78}
+.snb.on{color:var(--text-1);background:var(--accent-soft);font-weight:600}
+.snb.on svg{color:var(--accent);opacity:1}
+.snb.on::before{top:8px;bottom:8px;width:2px;background:var(--accent)}
+.sf{padding:12px 14px 14px;border-top:1px solid var(--border-1)}
+.ss{font:11px/1.5 var(--font-ui);color:var(--text-3)}
+.ss b{color:var(--text-2);font-variant-numeric:tabular-nums}
+#logout{min-height:36px;margin-top:10px;padding:0 9px;text-align:left;font:500 12px var(--font-ui);border-color:transparent}
+#logout:hover{background:var(--accent-soft);border-color:var(--border-1);color:var(--text-1)}
+#rail-toggle{border-radius:var(--radius-sm);color:var(--text-3)}
+#rail-toggle:hover{background:var(--surface-2);color:var(--text-1)}
+#sb.collapsed .sl-brand{display:flex;position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
+#sb.collapsed .sl{padding-inline:10px}
+#sb.collapsed .snb{margin-inline:8px;width:calc(100% - 16px);padding-inline:0}
+#sb.collapsed .snb[title]{position:relative}
+#main{transition:margin-left var(--motion-fast) var(--ease-standard)}
+#tb{gap:12px;padding:10px 20px;background:var(--surface-0);backdrop-filter:none;border-bottom-color:var(--border-1)}
+#sw{max-width:920px}
+#search{min-height:42px;padding-left:38px;background:var(--surface-2);border-color:var(--border-1);font:13px var(--font-ui)}
+#si{left:13px;color:var(--text-3)}
+#search:focus{background:var(--surface-1);border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-halo)}
+#search-clear{right:6px;border-radius:var(--radius-xs);color:var(--text-3)}
+#search-clear:hover{background:var(--accent-soft);color:var(--accent)}
+#upl{min-height:40px;padding:0 15px;border:1px solid var(--accent);border-radius:var(--radius-sm);background:var(--accent);font:600 12px var(--font-ui);letter-spacing:.01em;text-transform:none;box-shadow:none}
+#upl:hover{opacity:1;filter:brightness(1.08)}
+#theme-btn{border-color:transparent;border-radius:var(--radius-sm);color:var(--text-2)}
+#theme-btn:hover{background:var(--surface-2);border-color:var(--border-1);color:var(--text-1)}
+#fr{gap:6px;padding:8px 20px;background:var(--surface-0);backdrop-filter:none;border-bottom-color:var(--border-1)}
+#fr>span[style*="flex:1"]{min-width:12px}
+.ft{min-height:34px;padding:0 10px;border-radius:var(--radius-xs);background:transparent;border-color:transparent;color:var(--text-2);font:500 12px var(--font-ui)}
+.ft:hover{background:var(--surface-2);border-color:var(--border-1);color:var(--text-1)}
+.ft.on{background:transparent;border-color:transparent;color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent);font-weight:600}
+#filter-btn{min-height:34px;gap:7px;padding:0 10px;background:var(--surface-1);border-color:var(--border-1);font:500 12px var(--font-ui)}
+#filter-btn:hover,#filter-btn[aria-expanded="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--text-1)}
+#filter-badge{background:var(--accent);font:600 10px var(--font-ui)}
+.sort-wrap{gap:7px;margin-left:2px;padding-left:10px;border-left:1px solid var(--border-1)}
+.sort-wrap label{font:500 11px var(--font-ui);color:var(--text-3)}
+.sort-sel{min-height:34px;padding:0 26px 0 10px;background:var(--surface-1);border-color:var(--border-1);color:var(--text-1);font:500 12px var(--font-ui)}
+.sort-sel:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-halo)}
+.lm-wrap{gap:1px;margin-left:2px;padding:2px;border:1px solid var(--border-1);border-radius:var(--radius-sm);background:var(--surface-1)}
+.lm-btn{min-width:32px;min-height:30px;padding:6px;background:transparent;border:0;border-radius:var(--radius-xs);color:var(--text-3)}
+.lm-btn:hover{background:var(--surface-2);border:0;color:var(--text-1)}
+.lm-btn.on{background:var(--accent-soft);border:0;color:var(--accent)}
+#active-filters{gap:8px;padding:7px 20px;background:var(--surface-0);border-bottom-color:var(--border-1)}
+.active-filter-label{font:500 11px var(--font-ui);color:var(--text-3)}
+.filter-chip{min-height:28px;padding:3px 9px;border-color:var(--border-1);border-radius:var(--radius-xs);background:var(--surface-1);color:var(--text-2);font:500 11px var(--font-ui)}
+.filter-chip:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--text-1)}
+.filter-chip b{color:var(--accent)}
+.filter-chip-clear{color:var(--text-3);font:500 11px var(--font-ui)}
+.filter-chip-clear:hover{color:var(--accent)}
+#filter-pop{padding:14px;border:1px solid var(--border-2);border-radius:var(--radius-md);font-family:var(--font-ui)}
+.filter-title{font:600 13px var(--font-ui)}
+.filter-label{font:600 10px var(--font-ui);color:var(--text-3)}
+.filter-option{border-radius:var(--radius-xs);background:var(--surface-1);font:500 12px var(--font-ui)}
+.filter-option:hover,.filter-option[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--text-1)}
+#st{gap:12px;padding:5px 20px;background:var(--surface-0);border-bottom-color:var(--border-1)}
+#stx{font:11px var(--font-ui);color:var(--text-3)}
+#stx b{color:var(--text-2);font-variant-numeric:tabular-nums}
+#pb{max-width:240px;height:2px;background:var(--border-1)}
+#pf{background:var(--accent)}
+#bnav{padding-inline:8px;background:var(--surface-1);border-top-color:var(--border-1);backdrop-filter:none}
+.bnav-btn{gap:4px;border-radius:var(--radius-sm);font:500 10px var(--font-ui);color:var(--text-3)}
+.bnav-btn:hover{background:var(--surface-2);color:var(--text-1)}
+.bnav-btn.on{background:transparent;color:var(--accent)}
+.bnav-btn.on svg{filter:none}
+html[data-theme="light"] #tb,html[data-theme="light"] #fr,html[data-theme="light"] #sb{backdrop-filter:none}
+@media(max-width:900px){#tb{padding-inline:14px}#fr{padding-inline:14px;gap:4px}.ft{padding-inline:8px}.sort-wrap{padding-left:7px}}
+@media(max-width:640px){
+  #sb{width:min(84vw,300px);background:var(--surface-1);box-shadow:var(--shadow-floating)}
+  #main{margin-left:0}
+  #tb{gap:8px;padding:8px 10px}
+  #hb{min-width:40px;min-height:40px;border-radius:var(--radius-sm)}
+  #hb:hover{background:var(--surface-2);color:var(--text-1)}
+  #sw{flex:1;max-width:none}
+  #search{min-height:40px;padding-right:8px;font-size:12px}
+  #upl{min-width:40px;min-height:40px;padding:0 8px;font-size:11px}
+  #theme-btn{min-width:36px;min-height:40px;padding:0 7px}
+  #fr{gap:5px;padding:7px 10px;scrollbar-width:none;overscroll-behavior-x:contain}
+  #fr>span[style*="flex:1"]{flex:0 0 6px!important;min-width:6px}
+  .ft{min-height:36px;padding-inline:9px}
+  #filter-btn{min-height:36px;padding-inline:9px}
+  .sort-wrap{gap:5px;padding-left:7px}
+  .sort-wrap label{display:none}
+  .sort-sel{min-height:36px;max-width:100px;padding-left:8px;padding-right:20px}
+  .lm-wrap{gap:0;margin-left:0}
+  .lm-btn{min-width:32px;min-height:32px;padding:6px}
+  #active-filters{padding:6px 10px}
+  #st{padding:5px 10px}
+  #pb{max-width:72px}
+  #filter-pop{left:10px;right:10px;bottom:74px}
+  #bnav{min-height:60px}
+}
 </style>
 </head>
 <body>
@@ -949,15 +1054,15 @@ html[data-theme="light"] #upl-backdrop{background:rgba(35,37,44,.25)}
   </div>
   <nav class="snav">
     <div class="snl">Library</div>
-    <button class="snb on" data-t="all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span class="nb-label">All Media</span></button>
-    <button class="snb" data-t="image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg><span class="nb-label">Images</span></button>
-    <button class="snb" data-t="video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23,7 16,12 23,17 23,7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg><span class="nb-label">Videos</span></button>
-    <button class="snb" data-t="gif"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h4v4"/><path d="M16 8h-4"/></svg><span class="nb-label">GIFs</span></button>
-    <button class="snb" data-t="fav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26 12,2"/></svg><span class="nb-label">Favorites</span></button>
-    <button class="snb" data-t="recent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="nb-label">Recent</span></button>
-    <button class="snb" data-t="viewed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg><span class="nb-label">Most Viewed</span></button>
+    <button class="snb on" data-t="all" title="All Media" aria-label="All Media"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span class="nb-label">All Media</span></button>
+    <button class="snb" data-t="image" title="Images" aria-label="Images"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg><span class="nb-label">Images</span></button>
+    <button class="snb" data-t="video" title="Videos" aria-label="Videos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23,7 16,12 23,17 23,7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg><span class="nb-label">Videos</span></button>
+    <button class="snb" data-t="gif" title="GIFs" aria-label="GIFs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h4v4"/><path d="M16 8h-4"/></svg><span class="nb-label">GIFs</span></button>
+    <button class="snb" data-t="fav" title="Favorites" aria-label="Favorites"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26 12,2"/></svg><span class="nb-label">Favorites</span></button>
+    <button class="snb" data-t="recent" title="Recent" aria-label="Recent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="nb-label">Recent</span></button>
+    <button class="snb" data-t="viewed" title="Most Viewed" aria-label="Most Viewed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg><span class="nb-label">Most Viewed</span></button>
     <div class="snl">AI</div>
-    <button class="snb" id="nav-people"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.85"/></svg><span class="nb-label">People</span></button>
+    <button class="snb" id="nav-people" title="People" aria-label="People"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.85"/></svg><span class="nb-label">People</span></button>
   </nav>
   <div class="sf">
     <div class="ss">Total: <b id="st-tot">—</b></div>
