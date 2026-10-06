@@ -61,6 +61,29 @@ const THUMB_PX        = 300;
 const COOKIE_NAME = 'vs';
 const sessions    = new Map();
 
+function isDevAuthRequest(req) {
+  if (!DEV_AUTH_BYPASS) return false;
+  const remoteAddress = (req.socket.remoteAddress || '').replace(/^::ffff:/i, '');
+  if (remoteAddress !== '127.0.0.1' && remoteAddress !== '::1') return false;
+
+  const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
+  const hostname = (req.hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
+  if (!localHosts.has(hostname)) return false;
+
+  // Prevent a third-party page from using a browser's loopback connection as
+  // a local bypass. Top-level local navigation has no Origin header.
+  const origin = req.get('origin');
+  if (origin) {
+    try {
+      const parsedOrigin = new URL(origin);
+      if (parsedOrigin.protocol !== 'http:' || !localHosts.has(parsedOrigin.hostname.toLowerCase())) return false;
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
 const mkToken = () => {
   const t = crypto.randomBytes(32).toString('hex');
   sessions.set(t, Date.now() + SESSION_TTL);
