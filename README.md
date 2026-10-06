@@ -188,7 +188,14 @@ Then open:
 ```text
 http://localhost:8000
 ```
+### Local authenticated UI review
 
+For a temporary local UI review without entering a passphrase, start VaultOS in a dedicated PowerShell window with both explicit development flags:
+
+```powershell
+$env:NODE_ENV = 'development'
+$env:VAULTOS_DEV_AUTH_BYPASS = '1'
+npm start
 ---
 
 ## ⚙️ Configuration

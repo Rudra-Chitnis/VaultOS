@@ -27,6 +27,10 @@ app.use(compression());
 
 // ── Config (from .env, with safe defaults) ────────────────────
 const PASS_HASH        = (process.env.PASS_HASH || '').trim();
+// Opt-in local visual-review path. It requires both explicit development
+// settings and a loopback client; it never changes passphrase validation.
+const DEV_AUTH_BYPASS  = process.env.NODE_ENV === 'development' &&
+                         process.env.VAULTOS_DEV_AUTH_BYPASS === '1';
 const PORT             = parseInt(process.env.PORT) || 8000;
 const SESSION_TTL      = (parseInt(process.env.SESSION_TTL_HOURS) || 8) * 3600 * 1000;
 const RATE_MAX         = parseInt(process.env.LOGIN_RATE_LIMIT_MAX) || 10;
@@ -34,9 +38,12 @@ const RATE_WINDOW      = (parseInt(process.env.LOGIN_RATE_LIMIT_WINDOW_MINUTES) 
 // Python AI microservice URL — start face_service/start.bat before server.js
 const FACE_SERVICE_URL = process.env.FACE_SERVICE_URL || 'http://127.0.0.1:7860';
 
-if (!PASS_HASH || PASS_HASH === 'replace_with_sha256_password_hash' || PASS_HASH === 'your_sha256_hash_here') {
+if (!DEV_AUTH_BYPASS && (!PASS_HASH || PASS_HASH === 'replace_with_sha256_password_hash' || PASS_HASH === 'your_sha256_hash_here')) {
   console.error('PASS_HASH is not configured. Copy .env.example to .env and set PASS_HASH before starting VaultOS.');
   process.exit(1);
+}
+if (DEV_AUTH_BYPASS) {
+  console.warn('⚠️  Development auth bypass enabled for local loopback requests only.');
 }
 
 // ── Paths ─────────────────────────────────────────────────────
@@ -77,6 +84,7 @@ const parseCookies = h => {
 };
 function auth(req, res, next) {
   if (validTok(parseCookies(req.headers.cookie)[COOKIE_NAME])) return next();
+  if (isDevAuthRequest(req)) return next();
   if (/^\/(api|media|thumbs)\//.test(req.path)) return res.status(401).json({ error: 'Unauthorized' });
   res.redirect('/login.html');
 }
@@ -494,14 +502,14 @@ function sendAsset(res, filename, fallback) {
 // GET /  — unauthenticated: serve login page directly (200, no redirect needed)
 //          authenticated:   redirect to main app at /app
 app.get('/', (req, res) => {
-  if (validTok(parseCookies(req.headers.cookie)[COOKIE_NAME])) return res.redirect('/app');
+  if (validTok(parseCookies(req.headers.cookie)[COOKIE_NAME]) || isDevAuthRequest(req)) return res.redirect('/app');
   sendAsset(res, 'login.html');
 });
 
 // GET /login.html — convenience alias; behaves identically to GET /
 // Authenticated users are bounced to /app so they never see the login form again.
 app.get('/login.html', (req, res) => {
-  if (validTok(parseCookies(req.headers.cookie)[COOKIE_NAME])) return res.redirect('/app');
+  if (validTok(parseCookies(req.headers.cookie)[COOKIE_NAME]) || isDevAuthRequest(req)) return res.redirect('/app');
   sendAsset(res, 'login.html');
 });
 
@@ -513,7 +521,7 @@ app.get('/app', auth, (req, res) => {
 // Check auth status — polled by login.html on load to auto-redirect if already
 // authenticated. Was missing; caused an unhandled rejection on every page load.
 app.get('/api/check', (req, res) => {
-  res.json({ authenticated: validTok(parseCookies(req.headers.cookie)[COOKIE_NAME]) });
+  res.json({ authenticated: validTok(parseCookies(req.headers.cookie)[COOKIE_NAME]) || isDevAuthRequest(req) });
 });
 
 app.post('/api/login', (req, res) => {
