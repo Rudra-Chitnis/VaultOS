@@ -227,8 +227,12 @@ body::before{content:'';position:fixed;inset:0;
 #lbpr{position:absolute;z-index:21;top:0;left:0;right:0;height:2px;background:rgba(255,255,255,.08);pointer-events:none}
 #lbpf{height:100%;background:var(--r);width:0%;box-shadow:0 0 8px rgba(255,43,43,.5)}
 #lbmw{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0;background:radial-gradient(ellipse at 50% 45%,rgba(45,46,53,.22),transparent 67%);}
+#lb-player-stage{position:relative;display:none;flex:0 1 auto;align-items:center;justify-content:center;min-width:0;min-height:0;max-width:calc(100% - 104px);max-height:calc(100% - 116px)}
+#lb-player-stage.on{display:flex}
+#lb-fs-close{display:none;position:absolute;z-index:12;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));padding:8px 12px;border:1px solid rgba(255,255,255,.22);border-radius:6px;background:rgba(20,21,26,.72);color:#fff;font:16px var(--font-ui);cursor:pointer}
+#lb-player-stage:fullscreen #lb-fs-close,#lb-player-stage:-webkit-full-screen #lb-fs-close{display:block}
 #lbi{display:none;max-width:calc(100% - 104px);max-height:calc(100% - 116px);object-fit:contain;user-select:none;border-radius:2px;box-shadow:0 22px 80px rgba(0,0,0,.24)}
-#lbv{display:none;max-width:calc(100% - 104px);max-height:calc(100% - 116px);outline:none;border-radius:2px;box-shadow:0 22px 80px rgba(0,0,0,.24)}
+#lbv{display:none;max-width:calc(100vw - 104px);max-height:calc(100vh - 116px);outline:none;border-radius:2px;box-shadow:0 22px 80px rgba(0,0,0,.24)}
 /* Nav arrows */
 #lbpv,#lbnx{position:absolute;top:50%;transform:translateY(-50%);
   background:rgba(20,21,26,.52);border:1px solid rgba(255,255,255,.12);
@@ -253,13 +257,16 @@ body::before{content:'';position:fixed;inset:0;
 
 /* ── Premium Video Player Overlay ── */
 #vpc{
-  position:absolute;bottom:72px;left:0;right:0;z-index:8;
+  position:absolute;bottom:0;left:0;right:0;z-index:8;
   background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.35) 70%,transparent 100%);
   padding:36px 14px 12px;
   opacity:0;pointer-events:none;
   transition:opacity .22s ease;
   border-radius:0 0 3px 3px;
 }
+#lb-player-stage:fullscreen{width:100vw;height:100vh;max-width:none;max-height:none;background:#08090d}
+#lb-player-stage:-webkit-full-screen{width:100vw;height:100vh;max-width:none;max-height:none;background:#08090d}
+#lb-player-stage:fullscreen #lbv,#lb-player-stage:-webkit-full-screen #lbv{max-width:100%;max-height:100%;width:auto;height:auto}
 #vpc.vp-show{opacity:1;pointer-events:all}
 /* seek track */
 #vpc-seek-track{
@@ -695,12 +702,14 @@ body::before{content:'';position:fixed;inset:0;
   #lbt{padding:10px 58px 10px 14px;min-height:54px}
   #lbmeta{display:none}
   #lbcl{right:12px}
-  #lbi,#lbv{max-width:calc(100% - 48px);max-height:calc(100% - 174px);box-shadow:0 14px 40px rgba(0,0,0,.18)}
+  #lbi{max-width:calc(100% - 48px);max-height:calc(100% - 174px);box-shadow:0 14px 40px rgba(0,0,0,.18)}
+  #lb-player-stage{max-width:calc(100% - 48px);max-height:calc(100dvh - 174px)}
+  #lbv{max-width:calc(100vw - 48px);max-height:calc(100dvh - 174px);box-shadow:0 14px 40px rgba(0,0,0,.18)}
   #lbpv{left:5px}#lbnx{right:5px}
   /* Hide volume slider on mobile; keep mute btn */
   #vpc-vol-sl{display:none}
   /* Make video controls row wrap properly */
-  #vpc{bottom:32vh;padding:30px 12px 10px}
+  #vpc{bottom:0;padding:30px 12px 10px}
   #vpc-ctrl{flex-wrap:wrap}
   #vpc-time{font-size:10px;padding:0 3px}
 }
@@ -1513,7 +1522,10 @@ html[data-theme="light"] #ppbody.people-overview .pgav::after{background:linear-
   <div id="lbmw">
     <button id="lbpv">‹</button>
     <img id="lbi" alt=""/>
+    <div id="lb-player-stage">
     <video id="lbv" playsinline loop preload="none"></video>
+    <button id="lb-fs-close" type="button" aria-label="Close media viewer">✕</button>
+    </div>
     <div id="lb-error" role="status" aria-live="polite" hidden>Media could not be displayed.</div>
     <div id="lbfov"><svg id="lbfsvg" xmlns="http://www.w3.org/2000/svg"></svg></div>
     <button id="lbnx">›</button>
@@ -1686,6 +1698,8 @@ const spdvEl= document.getElementById('spv');
 
 // Video player DOM refs
 const vpcEl      = document.getElementById('vpc');
+const lbPlayerStageEl = document.getElementById('lb-player-stage');
+lbPlayerStageEl.appendChild(vpcEl);
 const vpcSeekEl  = document.getElementById('vpc-seek-range');
 const vpcProgEl  = document.getElementById('vpc-prog-bar');
 const vpcBufEl   = document.getElementById('vpc-buf-bar');
@@ -1826,6 +1840,16 @@ function makeCardEl() {
     `<div class="cp" style="display:none"><svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="24" fill="rgba(0,0,0,.55)"/><polygon points="19,15 37,24 19,33" fill="rgba(255,255,255,.9)"/></svg></div>` +
     `<div class="cn" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg><span></span></div>` +
     `<div class="c-ov"><span class="c-ov-name"></span></div>`;
+  el.addEventListener('pointerenter', event => {
+    if (event.pointerType !== 'mouse' || !matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+    el._previewHovered = true;
+    if (el._previewVisible && el._item?.type === 'video') startCardPreview(el);
+  });
+  el.addEventListener('pointerleave', event => {
+    if (event.pointerType !== 'mouse') return;
+    el._previewHovered = false;
+    if (el._item?.type === 'video') stopCardPreview(el);
+  });
   return el;
 }
 
@@ -1857,6 +1881,8 @@ function bindCard(el, item, idx, ctxItems = null) {
   el.className = 'c sk';
   el.setAttribute('aria-label', `Open ${item.name}`);
   el._item = item;
+  el._previewVisible = false;
+  el._previewHovered = matchMedia('(hover:hover) and (pointer:fine)').matches && el.matches(':hover');
   el._idx  = idx;
   el._ctxItems = ctxItems;
 
@@ -2612,22 +2638,33 @@ function vpcToggleMute() {
   vpcShow(true);
 }
 
+function viewerFullscreenElement() {
+  return document.fullscreenElement || document.webkitFullscreenElement || null;
+}
+
+function exitViewerFullscreen() {
+  const fullscreenElement = viewerFullscreenElement();
+  if (!fullscreenElement || (fullscreenElement !== lbEl && !lbEl.contains(fullscreenElement))) return false;
+  const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if (exit) Promise.resolve(exit.call(document)).catch(() => {});
+  return true;
+}
+
 function vpcToggleFs() {
-  const container = lbEl;
-  if (!document.fullscreenElement) {
-    (container.requestFullscreen || container.webkitRequestFullscreen ||
-     container.mozRequestFullScreen || container.msRequestFullscreen)
-     .call(container).catch(() => {});
+  const fullscreenElement = viewerFullscreenElement();
+  if (fullscreenElement === lbPlayerStageEl) {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+    if (exit) Promise.resolve(exit.call(document)).catch(() => {});
   } else {
-    (document.exitFullscreen || document.webkitExitFullscreen ||
-     document.mozCancelFullScreen || document.msExitFullscreen)
-     .call(document).catch(() => {});
+    const request = lbPlayerStageEl.requestFullscreen || lbPlayerStageEl.webkitRequestFullscreen || lbPlayerStageEl.mozRequestFullScreen || lbPlayerStageEl.msRequestFullscreen;
+    if (request) Promise.resolve(request.call(lbPlayerStageEl)).catch(() => {});
   }
   vpcShow(true);
 }
 
 function _vpcFsIcon() {
-  vpcFsEl.innerHTML = document.fullscreenElement ? VPC_SVG.exitFs : VPC_SVG.fs;
+  const fullscreenElement = viewerFullscreenElement();
+  vpcFsEl.innerHTML = fullscreenElement === lbPlayerStageEl ? VPC_SVG.exitFs : VPC_SVG.fs;
 }
 
 function vpcInit() {
@@ -2637,7 +2674,7 @@ function vpcInit() {
   vpcBufEl.style.width  = '0%';
   vpcTimeEl.textContent = '0:00 / 0:00';
   vpcPPEl.innerHTML     = VPC_SVG.pause;
-  vpcFsEl.innerHTML     = VPC_SVG.fs;
+  _vpcFsIcon();
   _vpcActive = true;
   vpcShow(true);
   if (_vpcRaf) cancelAnimationFrame(_vpcRaf);
@@ -2648,6 +2685,7 @@ function vpcDispose() {
   _vpcActive = false;
   if (_vpcRaf) { cancelAnimationFrame(_vpcRaf); _vpcRaf = null; }
   clearTimeout(_vpcHideT);
+  _vpcSeeking = false;
   vpcEl.classList.remove('vp-show');
 }
 
@@ -2725,6 +2763,7 @@ lbvEl.addEventListener('loadedmetadata', () => {
 // Fullscreen change — update icon
 document.addEventListener('fullscreenchange', _vpcFsIcon);
 document.addEventListener('webkitfullscreenchange', _vpcFsIcon);
+document.addEventListener('MSFullscreenChange', _vpcFsIcon);
 
 // ─────────────────────────────────────────────────────────────
 //  LIGHTBOX
@@ -2748,12 +2787,13 @@ function openContextLB(ctxItems, idx) {
 }
 
 function closeLB() {
+  exitViewerFullscreen();
   clearTimeout(_lbControlsTimer); lbEl.classList.remove('lb-idle');
   stopSS();
   lbEl.classList.remove('on');
   lbEl.classList.remove('assign-open'); // ensure dim/block state is always cleared
   vpcDispose();
-  resetLightboxVideo(); lbvEl.style.display = 'none'; lbiEl.style.display = 'none';
+  resetLightboxVideo(); lbvEl.style.display = 'none'; lbiEl.style.display = 'none'; lbPlayerStageEl.classList.remove('on');
   clearFaceOverlay();
   document.body.style.overflow = '';
   _lbCtx = null; // exit cluster context
@@ -2778,6 +2818,7 @@ function showLB() {
   lbnEl.textContent=it.name;
   lbcEl.textContent=`${_idx+1}/${_items.length}`;
   resetLightboxVideo(); lbvEl.style.display='none'; lbiEl.style.display='none';
+  lbPlayerStageEl.classList.remove('on');
   vpcDispose();
   clearFaceOverlay();
   // Show/hide gallery nav arrows based on media type
@@ -2789,6 +2830,7 @@ function showLB() {
     _lbVideoResetting = false;
     lbEl.setAttribute('aria-busy', 'true');
     lbvEl.src=it.url;
+    lbPlayerStageEl.classList.add('on');
     lbvEl.style.display='block';
     // Trigger fade-in animation
     lbvEl.classList.remove('lb-nav-anim');
@@ -2797,6 +2839,7 @@ function showLB() {
     lbvEl.play().catch(()=>{});
     vpcInit();
   } else {
+    exitViewerFullscreen();
     lbEl.setAttribute('aria-busy', 'true');
     lbiEl.src=it.url; lbiEl.style.display='block';
     // Trigger fade-in animation
@@ -2889,6 +2932,7 @@ function restartSS() {
 document.getElementById('lb-ss').onclick = () => ssOn?stopSS():startSS();
 spdEl.oninput = () => { spdvEl.textContent=spdEl.value+'s'; if(ssOn) restartSS(); };
 document.getElementById('lbcl').onclick  = closeLB;
+document.getElementById('lb-fs-close').onclick = closeLB;
 document.getElementById('lbpv').onclick  = () => { stopSS(); lbGo(-1); };
 document.getElementById('lbnx').onclick  = () => { stopSS(); lbGo(1); };
 document.getElementById('lb-pv').onclick = () => { stopSS(); lbGo(-1); };
@@ -2907,6 +2951,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     // Priority chain: assign modal → lightbox (never close viewer when modal is open)
     if (!assignBg.classList.contains('hide')) { closeAssignModal(); return; }
+    if (exitViewerFullscreen()) { e.preventDefault(); return; }
     closeLB(); return;
   }
 
@@ -4487,29 +4532,20 @@ function scheduleResumeStalled() {
   _resumeRafId = requestAnimationFrame(() => {
     _resumeRafId = null;
     if (_previewCount >= MAX_PREVIEWS) return;
-    // Scan visible pool entries; gwEl bounds used as viewport reference
-    const gwRect = gwEl.getBoundingClientRect();
-    for (const p of pool) {
+    // Resume visible preview cards from either Gallery or People.
+    for (const el of document.querySelectorAll('#gc .c, #pggrid .c')) {
       if (_previewCount >= MAX_PREVIEWS) break;
-      const el = p.el;
       if (el._previewActive) continue;
       const item = el._item;
-      if (!item || (item.type !== 'video' && item.type !== 'gif')) continue;
-      const r = el.getBoundingClientRect();
-      // Check ≥30% vertical overlap with gwEl viewport (mirrors observer threshold)
-      const overlapTop    = Math.max(r.top, gwRect.top);
-      const overlapBottom = Math.min(r.bottom, gwRect.bottom);
-      const overlap = overlapBottom - overlapTop;
-      if (overlap / r.height >= 0.3) {
-        startCardPreview(el);
-      }
+      if (!item || (item.type !== 'gif' && !(item.type === 'video' && el._previewHovered && el._previewVisible))) continue;
+      if (el._previewVisible) startCardPreview(el);
     }
   });
 }
 
 function startCardPreview(el) {
   const item = el._item;
-  if (!item || (item.type !== 'video' && item.type !== 'gif')) return;
+  if (!item || (item.type !== 'gif' && !(item.type === 'video' && el._previewHovered && el._previewVisible))) return;
   if (el._previewActive) return;
   if (_previewCount >= MAX_PREVIEWS) return;
 
@@ -4605,8 +4641,11 @@ const previewObserver = new IntersectionObserver((entries) => {
     const el = entry.target;
     const item = el._item;
     if (!item) continue;
+    el._previewVisible = entry.isIntersecting && entry.intersectionRatio >= 0.3;
     const isPreviewable = item.type === 'video' || item.type === 'gif';
-    if (entry.isIntersecting && isPreviewable) {
+    if (el._previewVisible && item.type === 'gif') {
+      startCardPreview(el);
+    } else if (el._previewVisible && item.type === 'video' && el._previewHovered && matchMedia('(hover:hover) and (pointer:fine)').matches) {
       startCardPreview(el);
     } else if (el._previewActive) {
       stopCardPreview(el);
