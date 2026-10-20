@@ -1281,6 +1281,146 @@ html[data-theme="light"] #ppbody.people-overview .pgav::after{background:linear-
 }
 @media(max-width:370px){#people-count{display:none}#people-intro-title{font-size:26px}.pg-card-copy{padding-inline:9px}#ppbody.people-overview .pgn{font-size:13px}}
 @media(prefers-reduced-motion:reduce){.people-skeleton::after{animation:none}.pgav,.pgav img,.pgc{transition:none!important}}
+
+/* Stitch Home integration — real VaultOS content, existing theme tokens. */
+#tb{min-height:64px}
+.tb-wordmark{display:flex;align-items:center;flex:none;color:var(--text-2);font:700 17px/1 var(--font-ui);letter-spacing:-.04em;text-decoration:none}
+.tb-wordmark span{color:var(--accent)}.tb-wordmark i{font-style:normal;color:var(--text-2)}.tb-wordmark b{margin-left:2px;color:var(--text-1);font-weight:700}
+#tb-search-slot{display:flex;align-items:center;justify-content:center;flex:1;min-width:0}
+#sw{width:100%;min-width:0}
+.tb-actions{display:flex;align-items:center;gap:7px;flex:none}
+#tune-btn,#drawer-close{display:none;align-items:center;justify-content:center;min-width:40px;min-height:40px;border:1px solid var(--border-1);border-radius:var(--radius-sm);background:transparent;color:var(--text-2);font:18px var(--font-ui);cursor:pointer}
+#tune-btn:hover,#tune-btn[aria-expanded="true"],#drawer-close:hover{border-color:var(--accent);color:var(--text-1);background:var(--accent-soft)}
+#home-page{display:none;flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--border-2) transparent}
+#home-page::-webkit-scrollbar{width:4px}#home-page::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:4px}
+#main.home-mode #home-shell{display:block}
+#main:not(.home-mode) #home-shell{display:none!important}
+#main.home-mode #active-filters{display:none!important}
+#main.home-mode #st{display:none!important}
+#main.home-mode #fr:not(.controls-open){display:none}
+#main.home-mode #tune-btn{display:inline-flex}
+.home-gallery-heading{margin-top:20px;padding:24px 0 10px;border-top:1px solid var(--border-1);width:min(1500px,100%);margin-inline:auto}
+.home-gallery-heading-wrap{display:flex;align-items:baseline;gap:8px}
+.home-gallery-heading h2{margin:0;color:var(--text-1);font:600 clamp(20px,2.4vw,28px)/1.15 var(--font-ui);letter-spacing:-.03em}
+.home-gallery-heading .home-section-kicker{margin-bottom:6px;font-size:9px;letter-spacing:.14em}
+.home-gallery-heading .home-gallery-sub{font-size:12px;font-family:var(--font-meta);color:var(--text-3);margin-left:4px}
+.home-shell{width:min(1500px,100%);margin:0 auto;padding:clamp(30px,5.8vh,66px) clamp(18px,4.5vw,68px) 54px}
+.home-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(310px,.92fr);align-items:center;gap:clamp(28px,5vw,76px);min-height:clamp(290px,39vh,410px);padding-bottom:clamp(35px,5vh,62px)}
+.home-hero-copy{min-width:0}
+.home-kicker,.home-section-kicker{display:flex;align-items:center;gap:9px;color:var(--text-3);font:600 10px/1.3 var(--font-meta);letter-spacing:.15em;text-transform:uppercase}
+.home-kicker i{width:7px;height:7px;flex:none;border-radius:50%;background:var(--accent);box-shadow:0 0 11px color-mix(in srgb,var(--accent) 42%,transparent)}
+#home-title{margin:19px 0 13px;color:var(--text-1);font:600 clamp(34px,4.1vw,56px)/1.04 var(--font-ui);letter-spacing:-.055em}
+.home-hero-copy>p{max-width:480px;margin:0;color:var(--text-2);font:15px/1.55 var(--font-ui)}
+#home-search-slot{width:min(100%,640px);min-height:64px;margin-top:28px}
+#home-search-slot #sw{max-width:640px}
+#home-search-slot #search{min-height:54px;padding-left:45px;border-radius:var(--radius-md);font:14px var(--font-ui);box-shadow:var(--shadow-card)}
+#home-search-slot #si{left:16px;width:16px;height:16px}
+#home-search-slot #search-sugg{top:calc(100% + 8px)}
+.home-feature-grid{display:grid;grid-template-columns:1.05fr .88fr;grid-template-rows:repeat(2,minmax(112px,1fr));gap:10px;min-width:0;max-height:330px}
+.home-media{position:relative;display:block;min-width:0;min-height:104px;overflow:hidden;padding:0;border:1px solid var(--border-1);border-radius:var(--radius-md);background:var(--surface-1);color:var(--text-1);text-align:left;cursor:pointer;isolation:isolate}
+.home-media:first-child{grid-row:span 2}
+.home-media img{display:block;width:100%;height:100%;min-height:inherit;object-fit:cover;transition:transform 450ms var(--ease-standard),filter 350ms var(--ease-standard)}
+.home-media:hover img,.home-media:focus-visible img{transform:scale(1.035);filter:saturate(1.06)}
+.home-media::after{content:"";position:absolute;inset:38% 0 0;background:linear-gradient(0deg,rgba(5,6,9,.72),transparent);opacity:.64;transition:opacity var(--motion-normal) var(--ease-standard);pointer-events:none}
+.home-media:hover::after,.home-media:focus-visible::after{opacity:.95}
+.home-media-name{position:absolute;z-index:1;right:12px;bottom:11px;left:12px;overflow:hidden;color:#fff;font:500 11px/1.3 var(--font-ui);text-overflow:ellipsis;white-space:nowrap;opacity:0;transition:opacity var(--motion-fast) var(--ease-standard)}
+.home-media:hover .home-media-name,.home-media:focus-visible .home-media-name{opacity:1}
+.home-feature-grid:empty::after{content:"Your media will appear here";grid-column:1/-1;display:grid;place-items:center;min-height:200px;border:1px dashed var(--border-1);border-radius:var(--radius-md);color:var(--text-3);font:13px var(--font-ui)}
+.home-categories{display:flex;justify-content:center;gap:8px;overflow-x:auto;padding:1px 0 26px;scrollbar-width:none}
+@media(max-width:540px){.home-categories{justify-content:flex-start}}
+.home-categories::-webkit-scrollbar,.home-people-rail::-webkit-scrollbar,.home-media-rail::-webkit-scrollbar{display:none}
+.home-category{flex:none;min-height:38px;padding:0 15px;border:1px solid var(--border-1);border-radius:var(--radius-sm);background:var(--surface-1);color:var(--text-2);font:500 12px var(--font-ui);cursor:pointer;white-space:nowrap;transition:background var(--motion-fast) var(--ease-standard),color var(--motion-fast) var(--ease-standard),border-color var(--motion-fast) var(--ease-standard)}
+.home-category:hover,.home-category.on{border-color:var(--accent);background:var(--accent-soft);color:var(--text-1)}
+.home-section{margin-top:19px;padding:22px 0 6px;border-top:1px solid var(--border-1)}
+.home-section[hidden]{display:none}
+.home-section-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:15px}
+.home-section-kicker{margin-bottom:7px;font-size:9px;letter-spacing:.12em}
+.home-section-heading h2{margin:0;color:var(--text-1);font:500 clamp(18px,2vw,22px)/1.2 var(--font-ui);letter-spacing:-.03em}
+.home-rail-actions{display:flex;align-items:center;gap:5px;flex:none}
+.home-rail-actions button,.home-view-all{min-height:36px;padding:0 10px;border:1px solid transparent;border-radius:var(--radius-sm);background:transparent;color:var(--text-2);font:500 11px var(--font-ui);cursor:pointer}
+.home-rail-actions button:hover,.home-view-all:hover{border-color:var(--border-1);background:var(--surface-1);color:var(--text-1)}
+.home-view-all span{margin-left:5px;color:var(--accent)}
+.home-people-rail,.home-media-rail{display:flex;gap:11px;overflow-x:auto;overscroll-behavior-x:contain;padding:2px 1px 10px;scrollbar-width:none;scroll-behavior:smooth}
+.home-people-rail{cursor:grab;user-select:none;touch-action:pan-x}
+.home-people-rail.dragging{cursor:grabbing;scroll-behavior:auto}
+.home-person-card{display:flex;align-items:center;gap:11px;flex:none;min-width:190px;min-height:72px;padding:8px 15px 8px 8px;border:1px solid var(--border-1);border-radius:var(--radius-md);background:var(--surface-1);color:var(--text-1);text-align:left;cursor:pointer;transition:border-color var(--motion-fast) var(--ease-standard),background var(--motion-fast) var(--ease-standard)}
+.home-person-card:hover{border-color:var(--border-2);background:var(--surface-2)}
+.home-person-avatar{width:52px;height:52px;flex:none;overflow:hidden;border-radius:50%;background:var(--surface-3)}
+.home-person-avatar img{width:100%;height:100%;object-fit:cover}
+.home-person-copy{display:flex;min-width:0;flex-direction:column;gap:4px}
+.home-person-name{overflow:hidden;font:600 12px/1.2 var(--font-ui);text-overflow:ellipsis;white-space:nowrap}
+.home-person-count{color:var(--text-3);font:11px/1.2 var(--font-ui)}
+.home-media-rail .home-media{flex:0 0 clamp(145px,17vw,228px);height:clamp(125px,16vw,190px)}
+.home-loader{display:flex;align-items:center;justify-content:center;gap:13px;min-height:48px;color:var(--text-3);font:11px var(--font-ui)}
+.home-loader[hidden]{display:none}
+.home-loader-dots{display:flex;position:relative;align-items:center;gap:7px;width:46px;height:16px}
+.home-loader-dots i{width:5px;height:5px;border-radius:50%;background:#17181d;animation:home-dot-travel 1.4s ease-in-out infinite}
+.home-loader-dots i:nth-child(2){animation-delay:.16s}.home-loader-dots i:nth-child(3){animation-delay:.32s}
+@keyframes home-dot-travel{0%,100%{transform:translateX(0);opacity:.25}50%{transform:translateX(7px);opacity:.85}}
+.home-hero,.home-section,.home-categories{animation:home-reveal .48s var(--ease-standard) both}
+.home-section{animation-delay:.08s}
+@keyframes home-reveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+html:not([data-theme="light"]) #sn{padding:18px}
+html:not([data-theme="light"]) #sp2{position:relative;width:54px;height:8px;border:0;border-radius:8px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.035),transparent);animation:none}
+html:not([data-theme="light"]) #sp2::before{content:"";position:absolute;top:2px;left:2px;width:4px;height:4px;border-radius:50%;background:#191a1f;box-shadow:9px 0 #191a1f,18px 0 #191a1f,27px 0 #191a1f;animation:gallery-orbs 1.45s ease-in-out infinite}
+@keyframes gallery-orbs{from{transform:translateX(0);opacity:.35}to{transform:translateX(18px);opacity:.9}}
+
+/* Dark-mode shell follows the hidden-navigation Stitch reference. Light-mode sidebar rules stay intact. */
+html:not([data-theme="light"]) #sb{z-index:220;width:260px;transform:translateX(-100%);background:var(--surface-1);border-right-color:var(--border-1);box-shadow:var(--shadow-floating)}
+html:not([data-theme="light"]) #sb.on{transform:translateX(0)}
+html:not([data-theme="light"]) #main,html:not([data-theme="light"]) body.rail-collapsed #main{margin-left:0}
+html:not([data-theme="light"]) #ov.on{display:block;z-index:210}
+html:not([data-theme="light"]) #hb{display:inline-flex;min-width:40px;min-height:40px;align-items:center;justify-content:center;border-radius:var(--radius-sm)}
+html:not([data-theme="light"]) #sb #rail-toggle{display:none}
+html:not([data-theme="light"]) #drawer-close,html:not([data-theme="light"]) #tune-btn{display:inline-flex}
+html:not([data-theme="light"]) #sb .sl{justify-content:space-between;align-items:center}
+html:not([data-theme="light"]) #sb .sl{display:flex;gap:8px}
+#sb .slt{font:700 16px/1 var(--font-ui);letter-spacing:-.04em;display:flex;align-items:center}
+#sb .slt span{color:var(--accent)}
+#sb .slt i{font-style:normal;color:var(--text-2)}
+#sb .slt b{margin-left:2px;color:var(--text-1);font-weight:700}
+html:not([data-theme="light"]) #sb .slt{text-shadow:none}
+html[data-theme="light"] #sb .slt span{color:var(--r)}
+html[data-theme="light"] #sb .slt i{color:var(--t2)}
+html[data-theme="light"] #sb .slt b{color:var(--t)}
+
+html:not([data-theme="light"]) #sb .sls{font:11px var(--font-ui);letter-spacing:0;color:var(--text-3)}
+html:not([data-theme="light"]) #fr .browse-controls{display:none}
+html:not([data-theme="light"]) #fr.controls-open .browse-controls{display:flex}
+html:not([data-theme="light"]) #fr.controls-open{max-height:130px!important;overflow:visible}
+html:not([data-theme="light"]) #fr{justify-content:space-between}
+html:not([data-theme="light"]) .ft.on{background:var(--accent-soft);border-color:var(--accent);color:var(--text-1)}
+
+html[data-theme="light"] .tb-wordmark{display:none}
+@media(max-width:760px){
+  .home-shell{padding:26px 18px 42px}
+  .home-hero{grid-template-columns:minmax(0,1fr);gap:24px;min-height:0;padding-bottom:24px}
+  #home-title{font-size:clamp(32px,8vw,42px)}
+  .home-feature-grid{grid-template-rows:repeat(2,minmax(82px,1fr));max-height:280px}
+  .home-feature-grid .home-media{min-height:82px}
+  .home-categories{margin-inline:-18px;padding:0 18px 20px}
+  .home-section{margin-top:13px;padding-top:18px}
+  .home-media-rail .home-media{flex-basis:168px;height:144px}
+}
+@media(max-width:640px){
+  #tb{gap:6px;padding:7px 10px;min-height:58px}
+  .tb-wordmark{font-size:15px}
+  html:not([data-theme="light"]) #main:not(.home-mode) .tb-wordmark,html:not([data-theme="light"]) #main.home-mode.search-docked .tb-wordmark{display:none}
+  .tb-actions{gap:3px}
+  #upl{min-width:40px;padding:0 10px}
+  #tune-btn{min-width:36px;min-height:40px}
+  #home-search-slot{margin-top:22px}
+  .home-person-card{min-width:172px;min-height:66px;padding-right:11px}
+  .home-person-avatar{width:46px;height:46px}
+  .home-rail-actions button{min-width:36px;padding-inline:7px}
+  #bnav{z-index:70}
+}
+@media(prefers-reduced-motion:reduce){
+  .home-hero,.home-section,.home-categories{animation:none}
+  .home-loader-dots i{animation:none}
+  .home-people-rail,.home-media-rail{scroll-behavior:auto}
+  html:not([data-theme="light"]) #sp2::before{animation:none}
+}
 </style>
 </head>
 <body>
@@ -1289,10 +1429,12 @@ html[data-theme="light"] #ppbody.people-overview .pgav::after{background:linear-
 <a class="skip-link" href="#gw">Skip to media gallery</a>
 <aside id="sb" aria-label="Primary navigation">
   <div class="sl">
-    <div class="sl-brand"><div class="slt">VAULT OS</div><div class="sls">Private Media Vault</div></div>
+    <div class="sl-brand"><div class="slt"><span>V</span><i>AULT</i><b>OS</b></div><div class="sls">Private Media Vault</div></div>
     <button id="rail-toggle" title="Toggle sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    <button id="drawer-close" type="button" aria-label="Close navigation menu" title="Close navigation menu">×</button>
   </div>
   <nav class="snav">
+    <button class="snb on" id="nav-home" type="button" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/></svg><span class="nb-label">Home</span></button>
     <div class="snl">Library</div>
     <button class="snb on" data-t="all" title="All Media" aria-label="All Media"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span class="nb-label">All Media</span></button>
     <button class="snb" data-t="image" title="Images" aria-label="Images"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg><span class="nb-label">Images</span></button>
@@ -1315,15 +1457,20 @@ html[data-theme="light"] #ppbody.people-overview .pgav::after{background:linear-
 <div id="main">
   <div id="tb">
       <button id="hb" aria-label="Open navigation menu" aria-expanded="false" aria-controls="sb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-    <div id="sw">
+    <a class="tb-wordmark" href="#home-title" aria-label="VaultOS Home"><span>V</span><i>AULT</i><b>OS</b></a>
+    <div id="tb-search-slot"></div>
+    <div class="tb-actions">
+      <button id="upl">↑ Upload</button>
+      <button id="tune-btn" type="button" aria-label="Show gallery controls" aria-expanded="false">⚙</button>
+      <button id="theme-btn" title="Toggle dark/light theme">☀</button>
+    </div>
+  </div>
+  <div id="sw">
       <svg id="si" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input id="search" type="text" placeholder="Search files, people…" autocomplete="off"/>
       <button id="search-clear" title="Clear search">×</button>
       <div id="search-sugg"></div>
     </div>
-    <button id="upl">↑ Upload</button>
-    <button id="theme-btn" title="Toggle dark/light theme">☀</button>
-  </div>
   <div id="fr">
     <div class="category-strip" role="group" aria-label="Media categories">
     <button class="ft on" data-t="all">All</button>
@@ -1334,7 +1481,7 @@ html[data-theme="light"] #ppbody.people-overview .pgav::after{background:linear-
     <button class="ft" data-t="recent">Recent</button>
     <button class="ft" data-t="viewed">Most Viewed</button>
     </div>
-    <div class="browse-controls" role="group" aria-label="Browse controls">
+    <div class="browse-controls" id="browse-controls" role="group" aria-label="Browse controls">
     <div class="filter-wrap">
       <button id="filter-btn" type="button" aria-expanded="false" aria-controls="filter-pop" aria-label="Open filters">⌘ Filters <span id="filter-badge">0</span></button>
       <div id="filter-pop" role="dialog" aria-label="Media filters">
@@ -1359,7 +1506,7 @@ html[data-theme="light"] #ppbody.people-overview .pgav::after{background:linear-
       </button>
     </div>
     <div class="lm-wrap" id="lm-wrap">
-      <button class="lm-btn on" data-layout="grid" title="Grid">
+      <button class="lm-btn" data-layout="grid" title="Grid">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx=".5"/><rect x="9" y="1" width="6" height="6" rx=".5"/><rect x="1" y="9" width="6" height="6" rx=".5"/><rect x="9" y="9" width="6" height="6" rx=".5"/></svg>
       </button>
       <button class="lm-btn" data-layout="dense" title="Dense">
@@ -1368,7 +1515,7 @@ html[data-theme="light"] #ppbody.people-overview .pgav::after{background:linear-
       <button class="lm-btn" data-layout="cinematic" title="Cinematic">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="5" rx=".5"/><rect x="1" y="9" width="14" height="5" rx=".5"/></svg>
       </button>
-      <button class="lm-btn" data-layout="masonry" title="Masonry">
+      <button class="lm-btn on" data-layout="masonry" title="Masonry">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="9" rx=".5"/><rect x="9" y="1" width="6" height="5" rx=".5"/><rect x="9" y="7" width="6" height="8" rx=".5"/><rect x="1" y="11" width="6" height="4" rx=".5"/></svg>
       </button>
       <button class="lm-btn" data-layout="duo" title="Duo">
@@ -1383,6 +1530,53 @@ html[data-theme="light"] #ppbody.people-overview .pgav::after{background:linear-
     <div id="pb"><div id="pf"></div></div>
   </div>
   <div id="gw">
+    <div id="home-shell" class="home-shell" aria-labelledby="home-title">
+      <section class="home-hero">
+        <div class="home-hero-copy">
+          <span class="home-kicker"><i></i> YOUR PRIVATE MEDIA LIBRARY</span>
+          <h1 id="home-title">Your memories,<br/>beautifully gathered.</h1>
+          <p>A quieter way to explore everything in your vault.</p>
+          <div id="home-search-slot" aria-label="Search your media"></div>
+        </div>
+        <div id="home-feature-grid" class="home-feature-grid" aria-label="Recently added media"></div>
+      </section>
+      <nav class="home-categories" aria-label="Explore your library">
+
+        <button type="button" class="home-category" data-home-type="image">Images</button>
+        <button type="button" class="home-category" data-home-type="video">Videos</button>
+        <button type="button" class="home-category" data-home-type="fav">Favorites</button>
+        <button type="button" class="home-category" data-home-type="recent">Recently viewed</button>
+
+      </nav>
+      <section class="home-section" id="home-people-section" aria-labelledby="home-people-title" hidden>
+        <div class="home-section-heading">
+          <div><span class="home-section-kicker">FAMILIAR FACES</span><h2 id="home-people-title">People in your vault</h2></div>
+          <div class="home-rail-actions"><button type="button" id="home-people-left" aria-label="Scroll people left">‹</button><button type="button" id="home-people-right" aria-label="Scroll people right">›</button><button type="button" class="home-view-all" id="home-people-all">See all <span aria-hidden="true">→</span></button></div>
+        </div>
+        <div id="home-people-rail" class="home-people-rail" aria-label="People"></div>
+      </section>
+
+
+
+
+
+
+
+
+      <section class="home-section" id="home-viewed-section" aria-labelledby="home-viewed-title" hidden>
+        <div class="home-section-heading"><div><span class="home-section-kicker">YOUR MOST OPENED</span><h2 id="home-viewed-title">Most viewed</h2></div><button type="button" class="home-view-all" data-home-type="viewed">View all <span aria-hidden="true">→</span></button></div>
+        <div id="home-viewed-row" class="home-media-rail"></div>
+      </section>
+      <div id="home-gallery-heading" class="home-gallery-heading">
+        <div class="home-gallery-heading-wrap">
+          <div><span class="home-section-kicker">SANCTUARY STREAM</span><h2 id="home-gallery-title">All Media</h2></div>
+          <span class="home-gallery-sub">· Master Stream</span>
+        </div>
+      </div>
+      <div id="home-loader" class="home-loader" role="status" aria-live="polite" hidden><span class="home-loader-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Gathering your library</span></div>
+    </div>
+
+
     <div id="gh">
       <div id="gc"></div>
       <div id="sn"><div id="sp2"></div></div>
@@ -1457,7 +1651,11 @@ html[data-theme="light"] #ppbody.people-overview .pgav::after{background:linear-
 
 <!-- Mobile bottom nav -->
 <nav id="bnav">
-  <button class="bnav-btn on" data-t="all">
+  <button class="bnav-btn on" id="bnav-home" type="button" aria-label="Home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/></svg>
+    <span class="bnav-label">Home</span>
+  </button>
+  <button class="bnav-btn" data-t="all">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
     <span class="bnav-label">Library</span>
   </button>
@@ -1651,7 +1849,7 @@ let cols=COLS_D, cw=0, rh=0;
 
 // ── Phase B: multi-layout state ──────────────────────────
 // currentLayout: 'grid' | 'dense' | 'cinematic' | 'masonry' | 'duo'
-let currentLayout = localStorage.getItem('vault_layout') || 'grid';
+let currentLayout = localStorage.getItem('vault_layout') || 'masonry';
 // _positions: per-item {x,y,w,h} used in masonry mode
 let _positions = [];
 // Column-height accumulator for incremental masonry layout — persists across
@@ -2006,12 +2204,18 @@ function bindCard(el, item, idx, ctxItems = null) {
 //  pool[] tracks which data index each card is showing.
 //  freeList[] holds unused card elements ready to reuse.
 // ─────────────────────────────────────────────────────────────
+function getGalleryTopOffset() {
+  if (!homeActive) return 0;
+  const shell = document.getElementById('home-shell');
+  return shell && shell.style.display !== 'none' ? (shell.offsetHeight || 0) : 0;
+}
+
 function rowH() { return rh + galleryGap; }
 
 function totalRows() { return Math.ceil(items.length / cols); }
 
 function visRange() {
-  const st  = gwEl.scrollTop;
+  const st  = Math.max(0, gwEl.scrollTop - getGalleryTopOffset());
   const vh  = gwEl.clientHeight;
   const rh2 = rowH();
   const fr  = Math.max(0, Math.floor(st / rh2) - OVERSCAN);
@@ -2027,7 +2231,7 @@ function indexRange(fr, lr) {
 
 // Masonry-aware visible range: scan _positions[] for items overlapping viewport
 function visRangeMasonry() {
-  const st   = gwEl.scrollTop;
+  const st   = gwEl.scrollTop - getGalleryTopOffset();
   const vh   = gwEl.clientHeight;
   const pad  = (rh + galleryGap) * OVERSCAN;
   const top  = st - pad;
@@ -2296,6 +2500,7 @@ empEl.addEventListener('click', e => {
 // ─────────────────────────────────────────────────────────────
 let rafPending = false;
 gwEl.addEventListener('scroll', () => {
+  if (typeof homeActive !== 'undefined' && homeActive) placeHomeSearch(gwEl.scrollTop < 120);
   if (rafPending) return;
   rafPending = true;
   requestAnimationFrame(() => {
@@ -2462,6 +2667,7 @@ async function fetchSuggestions(q) {
 // Open a specific media file from search suggestions without disrupting gallery state.
 // If gallery has no items loaded, triggers a silent reload in the background.
 function openFileFromSearch(fileItem) {
+  exitHomeView();
   if (viewMode !== 'gallery') {
     // Silently show gallery (no loadPeople, no history push — just show the view)
     viewMode = 'gallery';
@@ -2473,8 +2679,8 @@ function openFileFromSearch(fileItem) {
     document.querySelectorAll('.snb').forEach(b => b.classList.remove('on'));
     const nav = document.querySelector(`.snb[data-t="${ctype}"]`);
     if (nav) nav.classList.add('on');
-    if (!items.length) fetchPage(true); // reload gallery in background if empty
   }
+  if (!items.length && !loading) fetchPage(true); // prime the gallery behind a Home search result
   // Open in single-item context lightbox — doesn't affect main gallery items[]
   openContextLB([fileItem], 0);
 }
@@ -2503,6 +2709,7 @@ srchEl.addEventListener('input', () => {
   srchT = setTimeout(() => {
     if (viewMode === 'gallery') {
       // Gallery: filter media files
+      exitHomeView();
       csearch = q; fetchPage(true);
     } else if (viewMode === 'people' && pdPersonId === null) {
       // People list: filter cluster grid
@@ -2545,6 +2752,7 @@ document.addEventListener('click', e => {
 //  TYPE FILTER
 // ─────────────────────────────────────────────────────────────
 function setType(t, preserveSearch = false) {
+  exitHomeView();
   saveScroll();          // preserve current view's scroll before switching
   // If we're in people view, switch DOM to gallery first WITHOUT triggering a
   // fetch — setType handles the fetch below.  This also sets viewMode='gallery'
@@ -2803,6 +3011,7 @@ function closeLB() {
   _lbCtx = null; // exit cluster context
   document.getElementById('lb-persons').innerHTML = ''; // clear person chips
   if (viewMode === 'gallery' && (ctype === 'recent' || ctype === 'viewed')) fetchPage(true);
+  if (homeActive && homeLoaded) renderHome();
 }
 function showLB() {
   // Support both gallery mode and cluster-context mode
@@ -3028,16 +3237,337 @@ function loadFiles() { return fetchPage(true); }
 //  VIEW MODE — 'gallery' | 'people'
 // ─────────────────────────────────────────────────────────────
 let viewMode = 'gallery';
+let homeActive = true;
+let returnHomeAfterPeople = false;
+let homeLoaded = false, homeLoading = false;
+let homeFeaturedItems = [], homeFileItems = [], homePeople = [];
+let homePeopleObserver = null, homePeopleFrame = 0, homePeopleVisible = false;
+let homePeoplePaused = false, homePeoplePointer = null, homePeopleDragMoved = false;
 const mainEl    = document.getElementById('main');
 const ppEl      = document.getElementById('pp');
 const gwWrapEl  = document.getElementById('gw');
 const tbEl      = document.getElementById('tb');
 const frEl      = document.getElementById('fr');
 const stEl      = document.getElementById('st');
+const homePageEl = document.getElementById('home-shell') || document.getElementById('home-page');
+const homeSearchSlotEl = document.getElementById('home-search-slot');
+const headerSearchSlotEl = document.getElementById('tb-search-slot');
+const homeFeatureGridEl = document.getElementById('home-feature-grid');
+const homePeopleSectionEl = document.getElementById('home-people-section');
+const homePeopleRailEl = document.getElementById('home-people-rail');
+const homeLoaderEl = document.getElementById('home-loader');
+let homeSearchMoveTimer = 0, homeSearchMoveGeneration = 0;
+
+function placeHomeSearch(inHome) {
+  const searchWrap = document.getElementById('sw');
+  const destination = inHome ? homeSearchSlotEl : headerSearchSlotEl;
+  mainEl.classList.toggle('search-docked', !inHome && homeActive);
+  if (!searchWrap || !destination || searchWrap.parentElement === destination) return;
+  const generation = ++homeSearchMoveGeneration;
+  clearTimeout(homeSearchMoveTimer);
+  searchWrap.style.transition = 'none';
+  searchWrap.style.transform = 'none';
+  const from = searchWrap.getBoundingClientRect();
+  destination.appendChild(searchWrap);
+  const to = searchWrap.getBoundingClientRect();
+  if (from.width < 2 || to.width < 2) { searchWrap.style.removeProperty('transition'); searchWrap.style.removeProperty('transform'); return; }
+  const scaleX = Math.max(.5, Math.min(2, from.width / to.width));
+  searchWrap.style.transformOrigin = 'top left';
+  searchWrap.style.transform = 'translate(' + (from.left - to.left) + 'px,' + (from.top - to.top) + 'px) scaleX(' + scaleX + ')';
+  void searchWrap.offsetWidth;
+  requestAnimationFrame(() => {
+    if (generation !== homeSearchMoveGeneration) return;
+    searchWrap.style.transition = 'transform 300ms cubic-bezier(.2,.7,.2,1)';
+    searchWrap.style.transform = 'none';
+  });
+  homeSearchMoveTimer = window.setTimeout(() => {
+    if (generation !== homeSearchMoveGeneration) return;
+    searchWrap.style.removeProperty('transition');
+    searchWrap.style.removeProperty('transform');
+    searchWrap.style.removeProperty('transform-origin');
+  }, 330);
+}
+
+function syncHomeNavigation() {
+  document.getElementById('nav-home')?.classList.toggle('on', homeActive && viewMode === 'gallery');
+  const nav = document.querySelector('.snb[data-t="' + ctype + '"]');
+  if (nav) nav.classList.toggle('on', !homeActive && viewMode === 'gallery');
+  document.getElementById('bnav-home')?.classList.toggle('on', homeActive && viewMode === 'gallery');
+  const allButton = document.querySelector('#bnav .bnav-btn[data-t="all"]');
+  if (allButton) allButton.classList.toggle('on', !homeActive && viewMode === 'gallery' && ctype === 'all');
+}
+
+function exitHomeView() {
+  if (!homeActive) return;
+  homeActive = false;
+  mainEl.classList.remove('home-mode');
+  placeHomeSearch(false);
+  syncHomeNavigation();
+  layout(); updateSpacer(); renderGrid();
+}
+
+function createHomeMediaCard(item, contextItems, index, featured = false) {
+  const card = document.createElement('button');
+  card.type = 'button';
+  card.className = 'home-media';
+  card.setAttribute('aria-label', 'Open ' + item.name);
+  const image = document.createElement('img');
+  image.alt = '';
+  image.loading = featured ? 'eager' : 'lazy';
+  image.decoding = 'async';
+  image.src = item.thumb || item.url;
+  image.addEventListener('error', () => {
+    if (item.type === 'image' && item.url && image.src !== new URL(item.url, location.href).href) image.src = item.url;
+    else card.classList.add('unavailable');
+  }, { once: true });
+  const name = document.createElement('span');
+  name.className = 'home-media-name';
+  name.textContent = item.name;
+  card.append(image, name);
+  card.addEventListener('click', () => openContextLB(contextItems, index));
+  return card;
+}
+
+function renderHomeMediaRow(sectionId, rowId, media) {
+  const section = document.getElementById(sectionId);
+  const row = document.getElementById(rowId);
+  row.replaceChildren();
+  if (!media.length) { section.hidden = true; return; }
+  media.slice(0, 8).forEach((item, index) => row.appendChild(createHomeMediaCard(item, media, index)));
+  section.hidden = false;
+}
+
+let heroRotateTimer = null;
+function setupHeroRotation(pool) {
+  if (heroRotateTimer) clearInterval(heroRotateTimer);
+  if (!pool || pool.length < 4) return;
+  let heroOffset = 0;
+  heroRotateTimer = setInterval(() => {
+    if (!homeActive || document.hidden) return;
+    heroOffset = (heroOffset + 3) % pool.length;
+    let nextItems = pool.slice(heroOffset, heroOffset + 3);
+    if (nextItems.length < 3) nextItems = nextItems.concat(pool.slice(0, 3 - nextItems.length));
+    const cards = homeFeatureGridEl.querySelectorAll('.home-media');
+    nextItems.forEach((item, idx) => {
+      const card = cards[idx];
+      if (!card) return;
+      const img = card.querySelector('img');
+      const nameSpan = card.querySelector('.home-media-name');
+      if (img) {
+        img.style.transition = 'opacity 500ms ease';
+        img.style.opacity = '0.35';
+        setTimeout(() => {
+          img.src = item.thumb || item.url;
+          if (nameSpan) nameSpan.textContent = item.name;
+          card.setAttribute('aria-label', 'Open ' + item.name);
+          card.onclick = () => openContextLB(nextItems, idx);
+          img.onload = () => { img.style.opacity = '1'; };
+          setTimeout(() => { img.style.opacity = '1'; }, 100);
+        }, 500);
+      }
+    });
+  }, 180000);
+}
+
+function renderHome() {
+  const validFeatured = homeFeaturedItems.filter(it => it && (it.thumb || it.url));
+  const displayPool = validFeatured.length ? validFeatured : homeFeaturedItems;
+  homeFeatureGridEl.replaceChildren();
+  displayPool.slice(0, 3).forEach((item, index) =>
+    homeFeatureGridEl.appendChild(createHomeMediaCard(item, displayPool, index, true)));
+  setupHeroRotation(displayPool);
+
+  homePeopleRailEl.replaceChildren();
+  homePeople.forEach(person => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'home-person-card';
+    button.setAttribute('aria-label', 'Open ' + (person.name || ('Person ' + person.id)));
+    const avatar = document.createElement('span');
+    avatar.className = 'home-person-avatar';
+    if (person.coverThumb) {
+      const image = document.createElement('img');
+      image.alt = '';
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      image.src = person.coverThumb;
+      avatar.appendChild(image);
+    }
+    const copy = document.createElement('span');
+    copy.className = 'home-person-copy';
+    const name = document.createElement('span');
+    name.className = 'home-person-name';
+    name.textContent = person.name || ('Person ' + person.id);
+    const count = document.createElement('span');
+    count.className = 'home-person-count';
+    const memories = Number(person.mediaCount ?? person.media_count ?? 0);
+    count.textContent = memories.toLocaleString() + ' ' + (memories === 1 ? 'memory' : 'memories');
+    copy.append(name, count);
+    button.append(avatar, copy);
+    button.addEventListener('click', () => navigateToPerson(person));
+    homePeopleRailEl.appendChild(button);
+  });
+  homePeopleSectionEl.hidden = homePeople.length === 0;
+  setupHomePeopleRail();
+
+  const byName = new Map(homeFileItems.map(item => [item.name, item]));
+  const recent = readRecent().map(name => byName.get(name)).filter(Boolean);
+  const favorite = Object.keys(readFavs()).map(name => byName.get(name)).filter(Boolean);
+  const views = readViews();
+  const mostViewed = Object.keys(views)
+    .filter(name => Number(views[name]) > 0 && byName.has(name))
+    .sort((a, b) => (Number(views[b]) || 0) - (Number(views[a]) || 0))
+    .map(name => byName.get(name));
+
+
+  renderHomeMediaRow('home-viewed-section', 'home-viewed-row', mostViewed);
+}
+
+async function loadHomeData() {
+  if (homeLoading) return;
+  if (homeLoaded) { renderHome(); return; }
+  homeLoading = true;
+  homeLoaderEl.hidden = false;
+  try {
+    const [featuredResponse, libraryResponse, peopleResponse] = await Promise.all([
+      fetch('/api/files?page=0&limit=16&type=all&search=&sort=newest').catch(() => null),
+      fetch('/api/filenames?search=').catch(() => null),
+      fetch('/api/faces/persons?limit=12&offset=0&search=&sort=files_desc').catch(() => null),
+    ]);
+    if ([featuredResponse, libraryResponse, peopleResponse].some(response => response?.status === 401)) { location.href = '/login.html'; return; }
+    if (!featuredResponse?.ok || !libraryResponse?.ok) throw new Error('Home media could not be loaded');
+    const [featured, library, people] = await Promise.all([
+      featuredResponse.json(),
+      libraryResponse.json(),
+      peopleResponse?.ok ? peopleResponse.json().catch(() => ({ items: [] })) : { items: [] },
+    ]);
+    homeFeaturedItems = featured.items || [];
+    homeFileItems = library.items || [];
+    homePeople = people.items || [];
+    stTot.textContent = Number(featured.total || 0).toLocaleString();
+    homeLoaded = true;
+    renderHome();
+  } catch (error) {
+    console.error('loadHome:', error);
+    showToast('Could not load your Home view. Try again.', 'err', 5000);
+  } finally {
+    homeLoading = false;
+    homeLoaderEl.hidden = true;
+  }
+}
+
+function showHomeView() {
+  if (viewMode !== 'gallery') showGalleryView(true);
+  if (csearch) {
+    csearch = '';
+    srchEl.value = '';
+    srchEl.classList.remove('has-value');
+    document.getElementById('sw').classList.remove('active');
+  }
+  homeActive = true;
+  mainEl.classList.add('home-mode');
+  gwEl.scrollTop = 0;
+  placeHomeSearch(true);
+  setMobileDrawerOpen(false);
+  syncHomeNavigation();
+  loadHomeData();
+  if (ctype !== 'all') { ctype = 'all'; fetchPage(true); } else if (!items.length && !loading) { fetchPage(true); } else { layout(); updateSpacer(); renderGrid(); }
+}
+
+function setupHomePeopleRail() {
+  if (homePeopleObserver) homePeopleObserver.disconnect();
+  if (homePeopleFrame) cancelAnimationFrame(homePeopleFrame);
+  homePeopleVisible = false;
+  const rail = homePeopleRailEl;
+  if (homePeople.length < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  homePeopleObserver = new IntersectionObserver(entries => {
+    homePeopleVisible = entries.some(entry => entry.isIntersecting);
+    if (homePeopleVisible) startHomePeopleRail();
+    else if (homePeopleFrame) { cancelAnimationFrame(homePeopleFrame); homePeopleFrame = 0; }
+  }, { threshold: .15 });
+  homePeopleObserver.observe(rail);
+  rail.onpointerenter = () => { homePeoplePaused = true; };
+  rail.onpointerleave = () => { homePeoplePaused = rail.contains(document.activeElement); };
+  rail.onfocusin = () => { homePeoplePaused = true; };
+  rail.onfocusout = event => { if (!rail.contains(event.relatedTarget)) homePeoplePaused = false; };
+  rail.onpointerdown = event => {
+    if (event.pointerType === 'touch') { homePeoplePaused = true; return; }
+    if (event.pointerType !== 'mouse' || event.button !== 0) return;
+    homePeoplePaused = true;
+    homePeoplePointer = { id: event.pointerId, x: event.clientX, scroll: rail.scrollLeft, moved: false };
+    rail.setPointerCapture(event.pointerId);
+  };
+  rail.onpointermove = event => {
+    if (!homePeoplePointer || homePeoplePointer.id !== event.pointerId) return;
+    const delta = event.clientX - homePeoplePointer.x;
+    if (Math.abs(delta) > 4) homePeoplePointer.moved = true;
+    if (homePeoplePointer.moved) {
+      rail.classList.add('dragging');
+      rail.scrollLeft = homePeoplePointer.scroll - delta;
+    }
+  };
+  const endDrag = event => {
+    if (!homePeoplePointer || homePeoplePointer.id !== event.pointerId) return;
+    homePeopleDragMoved = homePeoplePointer.moved;
+    homePeoplePointer = null;
+    rail.classList.remove('dragging');
+    homePeoplePaused = false;
+  };
+  rail.onpointerup = event => {
+    if (event.pointerType === 'touch') { homePeoplePaused = false; return; }
+    endDrag(event);
+  };
+  rail.onpointercancel = event => {
+    if (event.pointerType === 'touch') { homePeoplePaused = false; return; }
+    endDrag(event);
+  };
+}
+
+homePeopleRailEl.addEventListener('click', event => {
+  if (!homePeopleDragMoved) return;
+  event.preventDefault();
+  event.stopPropagation();
+  homePeopleDragMoved = false;
+}, true);
+
+function startHomePeopleRail() {
+  if (homePeopleFrame || !homePeopleVisible || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const step = () => {
+    homePeopleFrame = 0;
+    if (!homePeopleVisible) return;
+    if (!homePeoplePaused) {
+      const rail = homePeopleRailEl;
+      if (rail.scrollWidth > rail.clientWidth + 1) {
+        rail.scrollLeft += .22;
+        if (rail.scrollLeft >= rail.scrollWidth - rail.clientWidth) rail.scrollLeft = 0;
+      }
+    }
+    homePeopleFrame = requestAnimationFrame(step);
+  };
+  homePeopleFrame = requestAnimationFrame(step);
+}
+
+homePageEl.addEventListener('scroll', () => {
+  if (homeActive) placeHomeSearch(homePageEl.scrollTop < 120);
+}, { passive: true });
+document.getElementById('nav-home').addEventListener('click', showHomeView);
+document.getElementById('bnav-home').addEventListener('click', showHomeView);
+document.querySelector('.tb-wordmark').addEventListener('click', event => { event.preventDefault(); showHomeView(); });
+document.getElementById('drawer-close').addEventListener('click', () => setMobileDrawerOpen(false));
+document.getElementById('tune-btn').addEventListener('click', event => {
+  const open = !frEl.classList.contains('controls-open');
+  frEl.classList.toggle('controls-open', open);
+  event.currentTarget.setAttribute('aria-expanded', String(open));
+});
+document.querySelectorAll('[data-home-type]').forEach(button => button.addEventListener('click', () => setType(button.dataset.homeType)));
+document.getElementById('home-people-all').addEventListener('click', showPeopleView);
+document.getElementById('home-people-left').addEventListener('click', () => homePeopleRailEl.scrollBy({ left: -240, behavior: 'smooth' }));
+document.getElementById('home-people-right').addEventListener('click', () => homePeopleRailEl.scrollBy({ left: 240, behavior: 'smooth' }));
 
 // skipFetch=true: do the DOM switch only, let the caller drive the fetch.
 // Used by setType() so it can set ctype first before the fetch fires.
 function showGalleryView(skipFetch = false) {
+  exitHomeView();
   saveScroll();          // preserve people scroll before leaving
   viewMode = 'gallery';
   if (gwEl.scrollTop <= 12) setChromeHidden(false);
@@ -3074,6 +3604,8 @@ function showGalleryView(skipFetch = false) {
 }
 
 function showPeopleView() {
+  returnHomeAfterPeople = homeActive;
+  exitHomeView();
   saveScroll();          // preserve gallery scroll before leaving
   if (!history.state || history.state.view !== 'people') {
     history.pushState({ view: 'people' }, '', '#people');
@@ -3113,6 +3645,8 @@ function showPeopleView() {
 // ALL clusters rendering before openPersonDetail() wipes them out.
 function navigateToPerson(p) {
   if (viewMode !== 'people') {
+    returnHomeAfterPeople = homeActive;
+    exitHomeView();
     // Set up People view visuals without running loadPeople()
     saveScroll();
     if (!history.state || history.state.view !== 'people') {
@@ -3822,7 +4356,12 @@ window.addEventListener('popstate', e => {
     else if (viewMode !== 'people') showPeopleView();
   } else {
     // No state or gallery state — return to gallery
-    if (viewMode === 'people') showGalleryView();
+    if (viewMode === 'people' && returnHomeAfterPeople) {
+      returnHomeAfterPeople = false;
+      showHomeView();
+    } else if (viewMode === 'people') {
+      showGalleryView();
+    }
     // Ensure search is cleared when popping to no-state (e.g. page load state)
     if (csearch) { csearch = ''; srchEl.value = ''; fetchPage(true); }
   }
@@ -4757,7 +5296,7 @@ const previewObserver = new IntersectionObserver((entries) => {
 // ─────────────────────────────────────────────────────────────
 (function initLayoutSwitcher() {
   // Restore saved layout state on boot
-  const saved = localStorage.getItem('vault_layout') || 'grid';
+  const saved = localStorage.getItem('vault_layout') || 'masonry';
   gwEl.dataset.layout = saved;
   document.querySelectorAll('#lm-wrap .lm-btn').forEach(b => {
     const active = b.dataset.layout === saved;
@@ -4796,7 +5335,9 @@ const previewObserver = new IntersectionObserver((entries) => {
   // Keep bnav in sync when gallery tab changes via sidebar
   function syncBnav() {
     bnavEl.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('on'));
-    if (viewMode === 'people') {
+    if (homeActive && viewMode === 'gallery') {
+      document.getElementById('bnav-home').classList.add('on');
+    } else if (viewMode === 'people') {
       if (bnavPeople) bnavPeople.classList.add('on');
     } else {
       const match = bnavEl.querySelector(`.bnav-btn[data-t="${ctype}"]`);
@@ -4910,7 +5451,11 @@ const previewObserver = new IntersectionObserver((entries) => {
   function syncNav() {
     const people = viewMode === 'people';
     document.querySelectorAll('.snb,.ft,.bnav-btn').forEach(btn => {
-      const active = people ? (btn.id === 'nav-people' || btn.id === 'bnav-people') : btn.dataset.t === ctype;
+      const active = people
+        ? (btn.id === 'nav-people' || btn.id === 'bnav-people')
+        : homeActive
+          ? (btn.id === 'nav-home' || btn.id === 'bnav-home')
+          : btn.dataset.t === ctype;
       btn.classList.toggle('on', active);
       if (active) btn.setAttribute('aria-current', 'page'); else btn.removeAttribute('aria-current');
     });
@@ -5072,6 +5617,10 @@ function confirmVault({ title, message, action = 'Delete' }) {
 // ─────────────────────────────────────────────────────────────
 //  BOOT
 // ─────────────────────────────────────────────────────────────
+mainEl.classList.add('home-mode');
+syncHomeNavigation();
+placeHomeSearch(true);
+loadHomeData();
 layout();
 fetchPage(true);
 </script>

@@ -52,3 +52,16 @@ build/
 coverage/
 tmp/
 temp/
+
+
+# Local PM2 installation and troubleshooting artifacts
+.tools/
+.pm2_broken/
+pm2.ps1.bak
+scratch_script.txt
+
+# Installation-specific PM2 configuration
+ecosystem.local.cjs
+
+# Local configuration backups
+ecosystem.config.js.backup-*
